@@ -7,9 +7,16 @@
                     <x-heroicon-s-user class="w-10 h-10" />
                 </div>
             </div>
-            <div>
-                <h2 class="text-xl font-black text-gray-900 leading-tight">Budi Setiawan</h2>
-                <p class="text-sm text-gray-500 font-medium">NISN: 00123456789</p>
+            <div class="flex items-center justify-between w-full">
+                <div>
+                    <h2 class="text-xl font-black text-gray-900 leading-tight">Budi Setiawan</h2>
+                    <p class="text-sm text-gray-500 font-medium">NISN: 00123456789</p>
+                </div>
+                <span
+                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
             </div>
         </div>
 
@@ -27,15 +34,6 @@
             <div class="space-y-1">
                 <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Jenis Kelamin</p>
                 <p class="text-sm font-semibold text-gray-800">Laki-laki</p>
-            </div>
-
-            <div class="space-y-1">
-                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Status Akun</p>
-                <span
-                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    Aktif & Terverifikasi
-                </span>
             </div>
         </div>
     </x-filament::section>

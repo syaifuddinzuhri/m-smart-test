@@ -18,8 +18,10 @@
             </button>
         </div>
 
-        <div class="px-6 py-2 bg-red-50 border border-red-100 rounded-xl">
-            <span class="text-red-600 font-mono font-black text-xl">00:45:12</span>
+        <div x-data="timerHandler(@js($durationInSeconds))" x-init="initTimer()">
+            <div class="px-6 py-2 bg-red-50 border border-red-100 rounded-xl">
+                <span class="text-red-600 font-mono font-black text-xl" x-text="formatTime(remaining)">00:00:00</span>
+            </div>
         </div>
     </div>
 
@@ -38,31 +40,6 @@
             {{ $this->form }}
         </div>
     </div>
-
-    {{-- <div
-        class="flex flex-col md:flex-row items-center justify-between gap-6 bg-gray-50 p-6 rounded-xl border border-dashed border-gray-200">
-
-        <div class="order-1 md:order-2 flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-            <x-filament::button color="gray" outlined wire:click="previous" icon="heroicon-m-arrow-left"
-                :disabled="$activeTab === 'pg' && $currentStep === 1" class="flex-1 md:flex-none">
-                Sebelumnya
-            </x-filament::button>
-
-            <x-filament::button color="primary" wire:click="next" icon-position="after" icon="heroicon-m-arrow-right"
-                :disabled="$activeTab === 'essay' && $currentStep === $totalEssay" class="flex-1 md:flex-none">
-                Selanjutnya
-            </x-filament::button>
-        </div>
-
-        @if ($this->isAllAnswered())
-            <div class="order-2 md:order-1 w-full md:w-auto">
-                <x-filament::button color="info" size="xl" icon="heroicon-m-check-badge" wire:click="submit"
-                    class="w-full shadow-xl">
-                    Selesai & Kirim Ujian
-                </x-filament::button>
-            </div>
-        @endif
-    </div> --}}
 
     <!-- Navigasi & Tombol Ragu-ragu -->
     <div
@@ -159,3 +136,42 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('timerHandler', (initialSeconds) => ({
+            remaining: initialSeconds,
+            interval: null,
+            storageKey: 'exam_end_time_' + @js($exam_id),
+
+            initTimer() {
+                let endTime = localStorage.getItem(this.storageKey);
+
+                if (!endTime) {
+                    // Jika belum ada di storage, buat waktu akhir baru
+                    endTime = new Date().getTime() + (this.remaining * 1000);
+                    localStorage.setItem(this.storageKey, endTime);
+                }
+
+                this.interval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const dist = endTime - now;
+                    this.remaining = Math.max(0, Math.floor(dist / 1000));
+
+                    if (this.remaining <= 0) {
+                        clearInterval(this.interval);
+                        localStorage.removeItem(this.storageKey);
+                        @this.timeOut(); // Panggil method di Livewire
+                    }
+                }, 1000);
+            },
+
+            formatTime(seconds) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = seconds % 60;
+                return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+            }
+        }))
+    });
+</script>

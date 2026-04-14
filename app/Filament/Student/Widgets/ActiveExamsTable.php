@@ -55,7 +55,7 @@ class ActiveExamsTable extends BaseWidget
                     ->label(function ($record) {
                         $index = abs(crc32($record->id)) % 4;
                         return match ($index) {
-                            0 => 'Belum Dibuka',
+                            0 => 'Belum Mulai',
                             1 => 'Mulai Ujian',
                             2 => 'Lanjutkan',
                             3 => 'Lihat Hasil',

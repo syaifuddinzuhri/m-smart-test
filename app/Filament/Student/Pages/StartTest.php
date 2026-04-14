@@ -31,12 +31,18 @@ class StartTest extends Page implements HasForms
     public ?array $data = [];
 
     public $doubtfulQuestions = [];
+    public $durationInSeconds = 10;
 
     protected static string $view = 'filament.student.pages.start-test';
 
     public function mount(): void
     {
         $this->exam_id = request()->query('exam_id');
+
+        // Logika mengambil durasi dari database (Contoh)
+        // $exam = Exam::find($this->exam_id);
+        // $this->durationInSeconds = $exam->duration * 60;
+
         $this->form->fill();
     }
 
@@ -49,6 +55,16 @@ class StartTest extends Page implements HasForms
 
         // Nanti di sini tambahkan logic database:
         // ExamSession::where('user_id', auth()->id())->update(['is_locked' => true]);
+    }
+
+    public function timeOut(): void
+    {
+        $this->submit();
+        Notification::make()
+            ->title('Waktu Habis')
+            ->body('Ujian otomatis tersimpan karena waktu telah selesai.')
+            ->warning()
+            ->send();
     }
 
     public function backToDashboard(): void
@@ -183,7 +199,7 @@ class StartTest extends Page implements HasForms
         return $answeredData->count() >= $totalSoal;
     }
 
-    public function submit(): void
+    public function submit()
     {
         $jawaban = $this->form->getState();
 
@@ -195,6 +211,6 @@ class StartTest extends Page implements HasForms
             ->send();
 
         // Redirect kembali ke daftar ujian setelah 2 detik (opsional)
-        // return redirect()->to('/student/daftar-ujian');
+        return redirect()->to('/student');
     }
 }

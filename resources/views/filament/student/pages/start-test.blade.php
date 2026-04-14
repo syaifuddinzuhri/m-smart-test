@@ -68,10 +68,6 @@
                 }
             });
 
-            document.oncontextmenu = function() {
-                return false;
-            };
-
             document.onkeydown = function(e) {
                 // F12, Ctrl+Shift+I, Ctrl+U, Alt+Tab (sebagian), Meta key
                 if (e.keyCode == 123 ||
