@@ -1,0 +1,8 @@
+/* resources/css/filament/student/theme.css */
+
+@config "./tailwind.config.js";
+/* Tambahkan atau pastikan baris ini ada di paling atas */
+
+@import "../../../../vendor/filament/support/resources/css/index.css";
+@import "tailwindcss";
+/* Jika menggunakan Tailwind 4 */
