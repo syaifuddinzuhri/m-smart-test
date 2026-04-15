@@ -51,7 +51,7 @@ class StartTest extends Page implements HasForms
     // Method untuk mengunci ujian
     public function lockExam(): void
     {
-        // $this->isLocked = true;
+        $this->isLocked = true;
 
         // Nanti di sini tambahkan logic database:
         // ExamSession::where('user_id', auth()->id())->update(['is_locked' => true]);
