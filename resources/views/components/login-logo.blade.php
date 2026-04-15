@@ -46,7 +46,7 @@
 
     <!-- Container Logo -->
     <div class="relative mb-4">
-        <div class="absolute -inset-1 rounded-full blur opacity-25 {{ $isAdmin ? 'bg-emerald-400' : 'bg-blue-400' }}">
+        <div class="absolute -inset-1 rounded-full blur opacity-25 bg-emerald-400">
         </div>
         <img src="{{ asset('images/logo.png') }}" alt="Logo"
             class="relative h-16 w-auto transition-transform hover:scale-105 duration-300">
