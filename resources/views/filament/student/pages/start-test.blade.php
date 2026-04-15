@@ -15,8 +15,8 @@
     "
         class="relative">
         @if ($isLocked)
-            <div
-                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 24px;">
+            <div class="bg-gray-500/20"
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(20px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 24px;">
 
                 <div
                     class="bg-white rounded-xl shadow-xl p-4 text-center border border-gray-100 w-full max-w-xl transition-all scale-100">
@@ -53,7 +53,7 @@
                             Minta Token Baru
                         </x-filament::button>
 
-                        <p class="text-[10px] text-gray-400 uppercase tracking-[0.4em] font-black mt-6">
+                        <p class="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-black mt-6">
                             Security Protocol — System ID: {{ auth()->id() }}
                         </p>
                     </div>
