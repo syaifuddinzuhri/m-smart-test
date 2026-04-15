@@ -31,7 +31,7 @@ class StartTest extends Page implements HasForms
     public ?array $data = [];
 
     public $doubtfulQuestions = [];
-    public $durationInSeconds = 10;
+    public $durationInSeconds = 3600;
 
     protected static string $view = 'filament.student.pages.start-test';
 
