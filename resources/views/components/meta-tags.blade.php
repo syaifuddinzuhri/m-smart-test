@@ -10,7 +10,9 @@
 
 <meta name="robots" content="noindex, nofollow">
 
-<link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+<link rel="icon" href="/favicon.ico?v=2">
+<link rel="shortcut icon" href="/favicon.ico?v=2">
+<link rel="apple-touch-icon" href="/favicon.ico?v=2">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
