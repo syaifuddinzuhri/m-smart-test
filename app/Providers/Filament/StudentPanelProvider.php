@@ -9,15 +9,10 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
-use Filament\Support\Facades\FilamentAsset;
-use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -30,64 +25,6 @@ class StudentPanelProvider extends PanelProvider
 {
     public function boot(): void
     {
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
-            fn() => view('components.login-logo'),
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-            fn() => view('components.login-footer'),
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::TOPBAR_START,
-            fn() => view('filament.student.components.topbar-logo'),
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::BODY_END,
-            fn() => view('filament.student.components.footer'),
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::BODY_END,
-            function (): string {
-                if (app()->environment('production')) {
-                    return Blade::render('
-                    <script>
-                        document.oncontextmenu = function() { return false; };
-                    </script>
-                ');
-                }
-                return '';
-            },
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-            fn() => Blade::render('@livewire(\'realtime-server-time\')'),
-        );
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::HEAD_END,
-            fn(): string => Blade::render('
-            <script src="https://cdn.tailwindcss.com"></script>
-
-            <script>
-                tailwind.config = {
-                    darkMode: "class",
-                    corePlugins: {
-                        preflight: false, // Penting: Agar tidak merusak CSS bawaan Filament
-                    }
-                }
-            </script>
-        '),
-        );
-
-        // FilamentAsset::register([
-        //     Css::make('custom-style', asset('css/tailwind-full.css')),
-        // ]);
     }
 
     public function panel(Panel $panel): Panel
@@ -98,7 +35,8 @@ class StudentPanelProvider extends PanelProvider
             ->darkMode(false)
             ->authGuard('web')
             ->defaultThemeMode(ThemeMode::Light)
-            ->brandName('MANUSGI SMART TEST')
+            ->brandLogo(fn() => view('components.logo'))
+            ->brandLogoHeight('2rem')
             ->topNavigation()
             ->login(Login::class)
             ->colors([
@@ -123,6 +61,49 @@ class StudentPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
+                fn() => view('components.login-logo'),
+            )
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn() => view('components.login-footer'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn() => view('components.footer'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                function (): string {
+                    if (app()->environment('production')) {
+                        return Blade::render('
+                            <script>
+                                document.oncontextmenu = function() { return false; };
+                            </script>
+                        ');
+                    }
+                    return '';
+                },
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn() => Blade::render('@livewire(\'realtime-server-time\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn(): string => Blade::render('
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <script>
+                        tailwind.config = {
+                            darkMode: "class",
+                            corePlugins: {
+                                preflight: false,
+                            }
+                        }
+                    </script>
+                '),
+            )
             ->spa();
     }
 }

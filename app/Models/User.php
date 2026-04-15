@@ -17,7 +17,7 @@ class User extends Authenticatable implements FilamentUser
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['name', 'username', 'email', 'password', 'role', 'is_active'];
+    protected $guarded = [];
 
     protected $casts = [
         'role' => UserRole::class,
