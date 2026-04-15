@@ -87,7 +87,7 @@ class ResultTest extends Page implements HasTable
                     ->button()
                     ->outlined()
                     ->extraAttributes(['class' => 'w-full md:w-auto mt-4 justify-center'])
-                    ->url(fn($record) => '#'),
+                    ->url(fn($record) => route('filament.student.pages.detail-result-test', ['result_id' => $record->id]))
             ]);
     }
 }
