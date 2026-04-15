@@ -54,7 +54,7 @@
                         </x-filament::button>
 
                         <p class="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-black mt-6">
-                            Security Protocol — System ID: {{ auth()->id() }}
+                            Security Protocol — System ID: {{ generate_exam_system_id(auth()->id(), $exam_id) }}
                         </p>
                     </div>
                 </div>
@@ -66,32 +66,4 @@
             @include('filament.student.pages.parts.exam-content')
         </div>
     </div>
-
-    {{-- @script
-        <script>
-            // Logika deteksi tetap sama karena sudah optimal
-            document.addEventListener('visibilitychange', function() {
-                if (document.hidden && !$wire.isLocked) {
-                    $wire.call('lockExam');
-                }
-            });
-
-            window.addEventListener('blur', function() {
-                if (!$wire.isLocked) {
-                    $wire.call('lockExam');
-                }
-            });
-
-            document.onkeydown = function(e) {
-                // F12, Ctrl+Shift+I, Ctrl+U, Alt+Tab (sebagian), Meta key
-                if (e.keyCode == 123 ||
-                    (e.ctrlKey && e.shiftKey && e.keyCode == 73) ||
-                    (e.ctrlKey && e.keyCode == 85) ||
-                    e.metaKey) {
-                    $wire.call('lockExam');
-                    return false;
-                }
-            };
-        </script>
-    @endscript --}}
 </x-filament-panels::page>
