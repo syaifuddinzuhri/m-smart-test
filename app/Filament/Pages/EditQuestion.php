@@ -124,6 +124,9 @@ class EditQuestion extends Page
                         RichEditor::make('question_text')
                             ->label("Isi Soal")
                             ->required()
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('questions/content')
+                            ->fileAttachmentsVisibility('public')
                             ->live(onBlur: true)
                             ->reactive()
                             ->columnSpanFull(),

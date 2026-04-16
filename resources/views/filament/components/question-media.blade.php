@@ -1,6 +1,6 @@
 @props(['question'])
 
-<div {{ $attributes->merge(['class' => 'space-y-4 mb-4']) }}>
+<div {{ $attributes->merge(['class' => 'space-y-4 my-4']) }}>
     {{-- ATTACHMENTS --}}
     @if ($question->attachments && $question->attachments->count() > 0)
         <div class="flex flex-wrap gap-3">

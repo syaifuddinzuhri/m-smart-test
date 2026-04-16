@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Question extends Model
 {
@@ -27,6 +28,26 @@ class Question extends Model
             if ($question->examQuestions()->exists()) {
                 throw new \Exception("Soal ini tidak bisa dihapus karena sudah digunakan dalam Ujian.");
             }
+
+            $directoryPath = "questions/{$question->id}";
+
+            if (Storage::disk('public')->exists($directoryPath)) {
+                Storage::disk('public')->deleteDirectory($directoryPath);
+            }
+
+            $content = $question->question_text;
+            preg_match_all('/storage\/(questions\/content\/[a-zA-Z0-9\._-]+)/', $content, $matches);
+
+            if (isset($matches[1])) {
+                foreach ($matches[1] as $path) {
+                    if (Storage::disk('public')->exists($path)) {
+                        Storage::disk('public')->delete($path);
+                    }
+                }
+            }
+
+            $question->attachments()->delete();
+            $question->options()->delete();
         });
     }
 

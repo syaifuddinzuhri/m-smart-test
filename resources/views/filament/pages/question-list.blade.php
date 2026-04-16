@@ -103,7 +103,7 @@
 
                         <div class="p-4">
                             {{-- KONTEN PERTANYAAN: Ukuran text disesuaikan --}}
-                            <div class="prose max-w-none mt-4">
+                            <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug">
                                     {!! $q->question_text !!}
                                 </div>
@@ -211,7 +211,7 @@
 
                         <div class="p-4 pt-10">
                             {{-- PERTANYAAN --}}
-                            <div class="prose max-w-none mt-4">
+                            <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug">
                                     {!! $q->question_text !!}
                                 </div>
@@ -286,7 +286,7 @@ ESSAY
 
                         <div class="p-4 pt-10">
                             {{-- PERTANYAAN --}}
-                            <div class="prose max-w-none mt-4">
+                            <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug">
                                     {!! $q->question_text !!}
                                 </div>

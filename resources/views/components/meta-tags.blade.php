@@ -37,3 +37,13 @@
 <meta name="twitter:description"
     content="Sistem ujian online CBT MA NU Sunan Giri Prigen yang modern, aman, dan efisien.">
 <meta name="twitter:image" content="{{ env('APP_URL') }}/images/logo.png">
+
+
+<style>
+    .attachment__caption,
+    .attachment__metadata,
+    .attachment__name,
+    .attachment__size {
+        display: none !important;
+    }
+</style>
