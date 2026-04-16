@@ -38,7 +38,8 @@
     content="Sistem ujian online CBT MA NU Sunan Giri Prigen yang modern, aman, dan efisien.">
 <meta name="twitter:image" content="{{ env('APP_URL') }}/images/logo.png">
 
-
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
 <style>
     .attachment__caption,
@@ -58,5 +59,10 @@
     .soal-content:lang(ar) {
         font-size: 1.1rem;
         line-height: 1.8;
+    }
+
+    math {
+        display: inline-block;
+        vertical-align: middle;
     }
 </style>
