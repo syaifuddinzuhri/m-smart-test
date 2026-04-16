@@ -8,16 +8,27 @@
                 <div class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
                     <div class="flex gap-3">
                         <div
-                            class="flex-none w-6 h-6 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold text-xs">
+                            class="flex-none w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-xs">
                             1</div>
                         <p>Download template Excel di pojok kanan atas dan isi data sesuai kolom.</p>
                     </div>
                     <div class="flex gap-3">
                         <div
-                            class="flex-none w-6 h-6 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center font-bold text-xs">
-                            !</div>
+                            class="flex-none w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-xs">
+                            2</div>
                         <p>Username wajib <b>kecil, tanpa spasi & simbol</b>. Password otomatis menggunakan <b>NISN</b>.
                         </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <div
+                            class="flex-none w-6 h-6 rounded-full bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">
+                            3</div>
+                        <div class="text-danger-600 font-medium itadivc">
+                            <strong>Sistem Atomicity:</strong> Jika terdapat satu saja baris yang gagal, maka seluruh
+                            data dalam
+                            file tersebut akan <strong>gagal di-import</strong> (Rollback) untuk menjaga integritas
+                            data.
+                        </div>
                     </div>
                 </div>
             </x-filament::section>
