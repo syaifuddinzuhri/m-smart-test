@@ -42,7 +42,7 @@
                     <table class="w-full text-sm text-left border-collapse">
                         <thead>
                             <tr class="border-b">
-                                <th class="p-2 w-20">Baris</th>
+                                <th class="p-2 w-20">No. Soal</th>
                                 <th class="p-2">Potongan Soal</th>
                                 <th class="p-2 text-danger-600">Pesan Error</th>
                             </tr>
@@ -50,7 +50,7 @@
                         <tbody>
                             @foreach ($failures as $error)
                                 <tr class="border-b bg-danger-50/20">
-                                    <td class="p-2 font-mono font-bold">{{ $error['row'] }}</td>
+                                    <td class="p-2 text-center font-bold">{{ $error['no'] }}</td>
                                     <td class="p-2 text-gray-500">{{ $error['question'] ?? '-' }}</td>
                                     <td class="p-2 text-danger-700 font-medium">{{ $error['reason'] }}</td>
                                 </tr>

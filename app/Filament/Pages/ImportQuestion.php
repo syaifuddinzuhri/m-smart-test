@@ -3,7 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Exports\QuestionPgTemplateExport;
+use App\Exports\QuestionPgWordTemplateExport;
 use App\Imports\QuestionPgImport;
+use App\Imports\QuestionPgWordImport;
 use App\Models\QuestionCategory;
 use App\Models\Subject;
 use Filament\Actions\Action;
@@ -19,16 +21,16 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 
-class ImportExcelQuestion extends Page
+class ImportQuestion extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationLabel = 'Import Excel';
-    protected static ?string $title = 'Import Excel';
+    protected static ?string $navigationLabel = 'Import Soal';
+    protected static ?string $title = 'Import Soal';
     protected static ?string $navigationGroup = 'Manajemen Soal';
     protected static ?int $navigationSort = 5;
 
-    protected static string $view = 'filament.pages.import-excel-question';
+    protected static string $view = 'filament.pages.import-question';
     public array $failures = [];
     public ?array $data = [];
 
@@ -52,7 +54,6 @@ class ImportExcelQuestion extends Page
                                 ->label('Mata Pelajaran')
                                 ->options(Subject::pluck('name', 'id'))
                                 ->reactive()
-                                ->afterStateUpdated(fn(callable $set) => $set('question_category_id', null))
                                 ->required(),
                         ])->columnSpan(1),
 
@@ -66,14 +67,21 @@ class ImportExcelQuestion extends Page
                                     'essay' => 'Essay',
                                 ])
                                 ->required(),
+
                             FileUpload::make('file')
-                                ->label('File Excel (.xlsx)')
-                                ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+                                ->label('File Template (Excel atau Word)')
+                                ->helperText('Unggah file .xlsx atau .docx sesuai template yang tersedia.')
+                                ->acceptedFileTypes([
+                                    // MIME type untuk Excel (.xlsx)
+                                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                    // MIME type untuk Word (.docx)
+                                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                                ])
                                 ->disk('local')
                                 ->directory('temp-imports')
                                 ->required()
                                 ->preserveFilenames()
-                                ->imageEditor()
+                                ->rules(['extensions:xlsx,docx'])
                                 ->extraAttributes(['class' => 'h-full']),
                         ])->columnSpan(1),
                     ])
@@ -95,6 +103,12 @@ class ImportExcelQuestion extends Page
                 ->modalSubmitActionLabel('Unduh Sekarang')
                 ->modalCancelActionLabel('Kembali')
                 ->form([
+                    Select::make('format')
+                        ->label('Format File')
+                        ->options([
+                            'excel' => 'Microsoft Excel (.xlsx)',
+                            'word' => 'Microsoft Word (.docx)',
+                        ])->default('excel')->required(),
                     Select::make('template_type')
                         ->label('Pilih Tipe Template')
                         ->options([
@@ -105,8 +119,15 @@ class ImportExcelQuestion extends Page
                         ])->required()
                 ])
                 ->action(function (array $data) {
+                    if ($data['format'] === 'word') {
+                        return match ($data['template_type']) {
+                            'pg' => QuestionPgWordTemplateExport::export(),
+                            default => Notification::make()->title('Template belum tersedia')->danger()->send(),
+                        };
+                    }
+
                     return match ($data['template_type']) {
-                        'pg' => Excel::download(new QuestionPgTemplateExport, 'template_pilihan_ganda.xlsx'),
+                        'pg' => Excel::download(new QuestionPgTemplateExport, 'template_soal_pilihan_ganda.xlsx'),
                         default => Notification::make()->title('Template belum tersedia')->danger()->send(),
                     };
                 }),
@@ -122,10 +143,19 @@ class ImportExcelQuestion extends Page
         DB::beginTransaction();
         try {
             $filePath = Storage::disk('local')->path($state['file']);
+            $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
             if ($state['type'] === 'pg') {
-                $import = new QuestionPgImport($state['subject_id'], $state['question_category_id']);
-                Excel::import($import, $filePath);
+                if ($extension === 'docx') {
+                    $import = new QuestionPgWordImport(
+                        $state['subject_id'],
+                        $state['question_category_id']
+                    );
+                    $import->import($filePath);
+                } else {
+                    $import = new QuestionPgImport($state['subject_id'], $state['question_category_id']);
+                    Excel::import($import, $filePath);
+                }
             }
 
             Notification::make()

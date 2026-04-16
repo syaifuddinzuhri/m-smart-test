@@ -5,16 +5,18 @@ namespace App\Imports;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Element\Table;
+use PhpOffice\PhpWord\Element\Cell;
 use Exception;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
 
-class QuestionPgImport implements ToCollection
+class QuestionPgWordImport
 {
-    public array $importErrors = [];
-
     protected $subjectId;
     protected $categoryId;
+
+    // Properti untuk menampung error agar konsisten dengan Excel
+    public array $importErrors = [];
 
     public function __construct($subjectId, $categoryId)
     {
@@ -22,16 +24,36 @@ class QuestionPgImport implements ToCollection
         $this->categoryId = $categoryId;
     }
 
-    public function collection(Collection $rows)
+    public function import($filePath)
     {
-        $dataRows = $rows->slice(7);
-        $chunks = $dataRows->chunk(5);
+        $phpWord = IOFactory::load($filePath);
+        $sections = $phpWord->getSections();
+        $table = null;
+
+        foreach ($sections as $section) {
+            foreach ($section->getElements() as $element) {
+                if ($element instanceof Table) {
+                    $table = $element;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$table) {
+            throw new Exception("Tabel data tidak ditemukan di file Word.");
+        }
+
+        $rows = $table->getRows();
+        $dataRows = array_slice($rows, 1);
+        $chunks = array_chunk($dataRows, 5);
 
         foreach ($chunks as $index => $chunk) {
+            // Kalkulasi baris (Header 1 + (index * 5) + 1 untuk start)
+            $visualRow = ($index * 5) + 2;
             $nomorSoal = $index + 1;
-            $excelRow = ($index * 5) + 8;
-            $firstRow = $chunk->first();
-            $questionText = $firstRow[1];
+
+            $firstRowCells = $chunk[0]->getCells();
+            $questionText = $this->getCellValue($firstRowCells[1]);
 
             if (empty($questionText))
                 continue;
@@ -40,8 +62,9 @@ class QuestionPgImport implements ToCollection
             $correctCount = 0;
 
             foreach ($chunk as $row) {
-                $optionText = $row[2];
-                $isCorrect = (int) ($row[3] ?? 0) === 1;
+                $cells = $row->getCells();
+                $optionText = $this->getCellValue($cells[2] ?? null);
+                $isCorrect = trim($this->getCellValue($cells[3] ?? null)) === '1';
 
                 if (!empty($optionText)) {
                     $optionsData[] = [
@@ -53,6 +76,7 @@ class QuestionPgImport implements ToCollection
                 }
             }
 
+            // Validasi Logika: Simpan ke importErrors, jangan langsung throw
             $errorMessage = null;
             if (count($optionsData) < 3) {
                 $errorMessage = "Minimal harus ada 3 pilihan jawaban.";
@@ -62,14 +86,15 @@ class QuestionPgImport implements ToCollection
 
             if ($errorMessage) {
                 $this->importErrors[] = [
+                    'row' => $visualRow,
                     'no' => $nomorSoal,
-                    'row' => $excelRow,
                     'question' => substr($questionText, 0, 50) . '...',
                     'reason' => $errorMessage
                 ];
                 continue;
             }
 
+            // Simpan ke DB (akan di-rollback oleh DB::transaction di Page jika ada error)
             try {
                 $type = ($correctCount > 1) ? QuestionType::MULTIPLE_CHOICE->value : QuestionType::SINGLE_CHOICE->value;
                 $question = Question::create([
@@ -92,16 +117,36 @@ class QuestionPgImport implements ToCollection
             } catch (Exception $e) {
                 $this->importErrors[] = [
                     'no' => $nomorSoal,
-                    'row' => $excelRow,
+                    'row' => $visualRow,
                     'reason' => "Database Error: " . $e->getMessage()
                 ];
             }
         }
 
-        // KUNCI ATOMICITY:
-        // Jika setelah semua baris dicek ternyata ada error, lempar satu Exception besar
+        // Kunci Atomicity: Jika ada error terkumpul, lempar exception untuk trigger rollback
         if (!empty($this->importErrors)) {
             throw new Exception("Validasi Gagal");
         }
+    }
+
+    private function getCellValue($cell)
+    {
+        if (!$cell)
+            return '';
+        $text = '';
+        if ($cell instanceof Cell) {
+            foreach ($cell->getElements() as $element) {
+                if (method_exists($element, 'getText')) {
+                    $text .= $element->getText();
+                } elseif (method_exists($element, 'getElements')) {
+                    foreach ($element->getElements() as $subElement) {
+                        if (method_exists($subElement, 'getText')) {
+                            $text .= $subElement->getText();
+                        }
+                    }
+                }
+            }
+        }
+        return trim($text);
     }
 }
