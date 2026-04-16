@@ -8,6 +8,7 @@ use App\Models\QuestionCategory;
 use App\Models\Subject;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -35,40 +36,48 @@ class ImportExcelQuestion extends Page
     {
         $this->form->fill();
     }
-
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Upload File Excel')
-                    ->description('Pilih file template yang sudah diisi sesuai format.')
+                Section::make('Konfigurasi Import Soal')
+                    ->description('Lengkapi data berikut dan pilih file template yang sesuai.')
                     ->schema([
-                        Select::make('type')
-                            ->label('Tipe Soal dalam File')
-                            ->options([
-                                'pg' => 'Pilihan Ganda (Single & Multiple)',
-                                'tf' => 'True / False',
-                                'short' => 'Jawaban Singkat',
-                                'essay' => 'Essay',
-                            ])
-                            ->required(),
-                        Select::make('subject_id')
-                            ->label('Mata Pelajaran')
-                            ->options(Subject::pluck('name', 'id'))
-                            ->reactive()
-                            ->required(),
-                        Select::make('question_category_id')
-                            ->label('Topik / Kategori')
-                            ->options(QuestionCategory::pluck('name', 'id'))
-                            ->required(),
-                        FileUpload::make('file')
-                            ->label('File Excel (.xlsx)')
-                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
-                            ->disk('local')
-                            ->directory('temp-imports')
-                            ->required()
-                            ->preserveFilenames(),
-                    ])->columns(2),
+                        Group::make([
+                            Select::make('question_category_id')
+                                ->label('Topik / Kategori')
+                                ->options(QuestionCategory::pluck('name', 'id'))
+                                ->required(),
+                            Select::make('subject_id')
+                                ->label('Mata Pelajaran')
+                                ->options(Subject::pluck('name', 'id'))
+                                ->reactive()
+                                ->afterStateUpdated(fn(callable $set) => $set('question_category_id', null))
+                                ->required(),
+                        ])->columnSpan(1),
+
+                        Group::make([
+                            Select::make('type')
+                                ->label('Tipe Soal dalam File')
+                                ->options([
+                                    'pg' => 'Pilihan Ganda (Single & Multiple)',
+                                    'tf' => 'True / False',
+                                    'short' => 'Jawaban Singkat',
+                                    'essay' => 'Essay',
+                                ])
+                                ->required(),
+                            FileUpload::make('file')
+                                ->label('File Excel (.xlsx)')
+                                ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+                                ->disk('local')
+                                ->directory('temp-imports')
+                                ->required()
+                                ->preserveFilenames()
+                                ->imageEditor()
+                                ->extraAttributes(['class' => 'h-full']),
+                        ])->columnSpan(1),
+                    ])
+                    ->columns(2),
             ])
             ->statePath('data');
     }
