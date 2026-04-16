@@ -76,7 +76,7 @@ class CreateQuestion extends Page
                             ->afterStateUpdated(function ($state, $set) {
 
                                 // PG
-                                if (in_array($state, ['single_choice', 'multiple_choice'])) {
+                                if (in_array($state, [QuestionType::SINGLE_CHOICE->value, QuestionType::MULTIPLE_CHOICE->value])) {
                                     self::generateOptions(3, $set);
                                 }
 
@@ -165,7 +165,7 @@ class CreateQuestion extends Page
                             ])
                             ->live()
                             ->afterStateUpdated(fn($state, $set) => self::generateOptions($state, $set))
-                            ->visible(fn($get) => in_array($get('question_type'), ['single_choice', 'multiple_choice'])),
+                            ->visible(fn($get) => in_array($get('question_type'), [QuestionType::SINGLE_CHOICE->value, QuestionType::MULTIPLE_CHOICE->value])),
 
                         // OPTIONS (RELATIONAL)
                         Repeater::make('options')
@@ -190,7 +190,7 @@ class CreateQuestion extends Page
                                         $type = $get('../../question_type');
 
                                         // hanya untuk single & true_false
-                                        if (!in_array($type, ['single_choice', 'true_false'])) {
+                                        if (!in_array($type, [QuestionType::SINGLE_CHOICE->value, QuestionType::TRUE_FALSE->value])) {
                                             return;
                                         }
 
@@ -218,9 +218,9 @@ class CreateQuestion extends Page
                             ->deletable(false)
                             ->reorderable(false)
                             ->visible(fn($get) => in_array($get('question_type'), [
-                                'single_choice',
-                                'multiple_choice',
-                                'true_false'
+                                QuestionType::SINGLE_CHOICE->value,
+                                QuestionType::MULTIPLE_CHOICE->value,
+                                QuestionType::TRUE_FALSE->value,
                             ])),
 
                         // SHORT ANSWER
@@ -279,7 +279,7 @@ class CreateQuestion extends Page
         if ($type !== 'essay') {
 
             // SINGLE CHOICE & TRUE FALSE
-            if (in_array($type, ['single_choice', 'true_false'])) {
+            if (in_array($type, [QuestionType::SINGLE_CHOICE->value, QuestionType::TRUE_FALSE->value])) {
 
                 $count = collect($data['options'] ?? [])
                     ->where('is_correct', 1)
@@ -295,7 +295,7 @@ class CreateQuestion extends Page
             }
 
             // MULTIPLE CHOICE
-            if ($type === 'multiple_choice') {
+            if ($type === QuestionType::MULTIPLE_CHOICE->value) {
 
                 $count = collect($data['options'] ?? [])
                     ->where('is_correct', 1)

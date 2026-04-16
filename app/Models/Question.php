@@ -18,8 +18,6 @@ class Question extends Model
 
     protected $casts = [
         'question_type' => QuestionType::class,
-        'attachments' => 'array',
-        'options' => 'array',
         'correct_answer' => 'array',
     ];
 
