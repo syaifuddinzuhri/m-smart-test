@@ -17,7 +17,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-    <meta name="robots" content="noindex, nofollow">
+    {{-- <meta name="robots" content="noindex, nofollow"> --}}
 
     <link rel="icon" href="/favicon.ico?v=2">
     <link rel="shortcut icon" href="/favicon.ico?v=2">
