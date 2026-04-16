@@ -52,11 +52,15 @@ class ImportQuestion extends Page
                             Select::make('question_category_id')
                                 ->label('Topik / Kategori')
                                 ->options(QuestionCategory::pluck('name', 'id'))
+                                ->searchable()
+                                ->preload()
                                 ->required(),
                             Select::make('subject_id')
                                 ->label('Mata Pelajaran')
                                 ->options(Subject::pluck('name', 'id'))
                                 ->reactive()
+                                ->searchable()
+                                ->preload()
                                 ->required(),
                             Select::make('type')
                                 ->label('Tipe Soal dalam File')
