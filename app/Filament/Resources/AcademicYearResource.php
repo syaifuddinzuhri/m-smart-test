@@ -32,8 +32,7 @@ class AcademicYearResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Informasi Tahun Ajaran')
-                    ->description('Lengkapi data tahun ajaran dibawah ini!')
+                Section::make()
                     ->schema([
                         TextInput::make('name')
                             ->label('Nama Tahun Ajaran')

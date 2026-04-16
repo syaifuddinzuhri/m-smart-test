@@ -8,9 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class QuestionOption extends Model
 {
     use HasUuids;
-    public $incrementing = false;
-
-    protected $keyType = 'string';
 
     protected $guarded = [];
 

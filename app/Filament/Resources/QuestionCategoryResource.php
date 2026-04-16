@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\QuestionCategoryResource\Pages;
 use App\Models\QuestionCategory;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -27,16 +28,20 @@ class QuestionCategoryResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name')
-                    ->label('Nama Kategori / Topik')
-                    ->placeholder('Contoh: Soal tingkat 1')
-                    ->required()
-                    ->maxLength(255),
+                Section::make()
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Nama Kategori / Topik')
+                            ->placeholder('Contoh: Soal tingkat 1')
+                            ->required()
+                            ->maxLength(255),
 
-                Toggle::make('is_active')
-                    ->label('Status Aktif')
-                    ->default(true),
-            ])->columns(1);
+                        Toggle::make('is_active')
+                            ->label('Status Aktif')
+                            ->default(true),
+                    ])->columns(1)
+            ]);
+
     }
 
     public static function table(Table $table): Table

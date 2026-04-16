@@ -4,11 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Subject extends Model
+class ExamQuestionOrder extends Model
 {
     use HasUuids;
 
     protected $guarded = [];
+
+    public function question()
+    {
+        return $this->belongsTo(Question::class);
+    }
 }

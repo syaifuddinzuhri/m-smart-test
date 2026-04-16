@@ -38,9 +38,7 @@ class ClassroomResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Informasi Kelas')
-                    ->description('Lengkapi data kelas dibawah ini!')
-                    ->schema([
+                Section::make()->schema([
                         Select::make('major_id')
                             ->label('Jurusan')
                             ->relationship('major', 'name')

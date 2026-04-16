@@ -6,6 +6,7 @@ use App\Filament\Resources\SubjectResource\Pages;
 use App\Filament\Resources\SubjectResource\RelationManagers;
 use App\Models\Subject;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -28,28 +29,31 @@ class SubjectResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                TextInput::make('name')
-                    ->label('Nama Mata Pelajaran')
-                    ->required()
-                    ->placeholder('Contoh: Matematika')
-                    ->maxLength(255),
+        return $form->schema([
+            Section::make()
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Nama Mata Pelajaran')
+                        ->required()
+                        ->placeholder('Contoh: Matematika')
+                        ->maxLength(255),
 
-                TextInput::make('code')
-                    ->label('Kode Mapel')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->placeholder('Contoh: MTK')
-                    // Paksa input menjadi uppercase (huruf besar)
-                    ->extraInputAttributes(['style' => 'text-transform: uppercase'])
-                    ->dehydrateStateUsing(fn($state) => strtoupper($state))
-                    ->maxLength(20),
+                    TextInput::make('code')
+                        ->label('Kode Mapel')
+                        ->required()
+                        ->unique(ignoreRecord: true)
+                        ->placeholder('Contoh: MTK')
+                        // Paksa input menjadi uppercase (huruf besar)
+                        ->extraInputAttributes(['style' => 'text-transform: uppercase'])
+                        ->dehydrateStateUsing(fn($state) => strtoupper($state))
+                        ->maxLength(20),
 
-                Toggle::make('is_active')
-                    ->label('Status Aktif')
-                    ->default(true),
-            ])->columns(1); // Satu kolom agar pas di Modal
+                    Toggle::make('is_active')
+                        ->label('Status Aktif')
+                        ->default(true),
+                ])
+                ->columns(1)
+        ]);
     }
 
     public static function table(Table $table): Table

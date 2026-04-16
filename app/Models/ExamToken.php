@@ -6,14 +6,18 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class QuestionAttachment extends Model
+class ExamToken extends Model
 {
     use HasUuids;
 
     protected $guarded = [];
 
-    public function question(): BelongsTo
+    public function exam(): BelongsTo
     {
-        return $this->belongsTo(Question::class);
+        return $this->belongsTo(Exam::class);
+    }
+    public function classroom(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class);
     }
 }

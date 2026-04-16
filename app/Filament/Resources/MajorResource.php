@@ -33,8 +33,7 @@ class MajorResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Section::make('Informasi Jurusan')
-                ->description('Lengkapi data jurusan dibawah ini!')
+            Section::make()
                 ->schema([
                     TextInput::make('name')
                         ->label('Nama Jurusan')

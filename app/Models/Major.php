@@ -9,9 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Major extends Model
 {
     use HasUuids;
-    public $incrementing = false;
-
-    protected $keyType = 'string';
 
     protected $guarded = [];
 }

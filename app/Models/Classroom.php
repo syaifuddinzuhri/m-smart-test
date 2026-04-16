@@ -11,14 +11,16 @@ class Classroom extends Model
 {
     use HasUuids;
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $guarded = [];
 
     public function major(): BelongsTo
     {
         return $this->belongsTo(Major::class);
+    }
+
+    public function exams(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Exam::class, 'exam_classrooms')
+            ->using(ExamClassroom::class);
     }
 }
