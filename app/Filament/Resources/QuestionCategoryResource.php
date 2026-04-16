@@ -21,7 +21,7 @@ class QuestionCategoryResource extends Resource
     protected static ?string $modelLabel = 'Topik Materi';
     protected static ?string $pluralModelLabel = 'Daftar Topik Materi';
     protected static ?string $navigationGroup = 'Manajemen Soal';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

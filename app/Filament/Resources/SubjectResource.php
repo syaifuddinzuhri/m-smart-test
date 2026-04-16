@@ -24,7 +24,7 @@ class SubjectResource extends Resource
     protected static ?string $modelLabel = 'Mata Pelajaran';
     protected static ?string $pluralModelLabel = 'Daftar Mata Pelajaran';
     protected static ?string $navigationGroup = 'Manajemen Soal';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
