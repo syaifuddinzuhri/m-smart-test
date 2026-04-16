@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export COMPOSER_ALLOW_SUPERUSER=1
+
 echo "🚀 Memulai proses deploy dev..."
 
 echo "📥 Mengambil perubahan terbaru dari Git..."
