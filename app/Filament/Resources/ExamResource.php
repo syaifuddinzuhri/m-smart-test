@@ -324,7 +324,6 @@ class ExamResource extends Resource
                         ->label('Update Status')
                         ->icon('heroicon-m-arrow-path')
                         ->color('gray')
-                        ->visible(fn(Exam $record) => $record->status !== ExamStatus::CLOSED)
                         ->modalWidth(MaxWidth::Medium)
                         ->modalHeading('Perbarui Status Ujian')
                         ->modalDescription('Pilih status baru untuk ujian ini. Pastikan transisi status sudah sesuai.')
@@ -341,24 +340,40 @@ class ExamResource extends Resource
                                 ->selectablePlaceholder(false)
                                 ->searchable()
                                 ->preload()
-                                ->required(),
+                                ->required()
+                                ->live(),
+                            TextInput::make('additional_minutes')
+                                ->label('Tambahan Waktu (Menit)')
+                                ->numeric()
+                                ->suffix('Menit')
+                                ->helperText('Waktu selesai ujian akan otomatis bertambah dari waktu saat ini/waktu selesai sebelumnya.')
+                                ->visible(
+                                    fn(Get $get, Exam $record) =>
+                                    $record->status !== ExamStatus::DRAFT && $get('status') !== ExamStatus::DRAFT->value
+                                )
+                                ->placeholder('Masukkan angka menit...'),
                         ])
                         ->action(function (Exam $record, array $data) {
                             $oldStatus = $record->status;
                             $newStatus = ExamStatus::from($data['status']);
+                            $additionalMinutes = (int) ($data['additional_minutes'] ?? 0);
 
-                            if ($oldStatus === $newStatus)
+                            if ($oldStatus === $newStatus && $additionalMinutes <= 0) {
                                 return;
+                            }
 
                             $allowedTransitions = match ($oldStatus) {
                                 ExamStatus::DRAFT => [ExamStatus::ACTIVE, ExamStatus::INACTIVE, ExamStatus::CLOSED],
                                 ExamStatus::ACTIVE => [ExamStatus::INACTIVE, ExamStatus::CLOSED, ExamStatus::DRAFT],
                                 ExamStatus::INACTIVE => [ExamStatus::ACTIVE, ExamStatus::CLOSED, ExamStatus::DRAFT],
-                                ExamStatus::CLOSED => [],
+                                ExamStatus::CLOSED => [ExamStatus::ACTIVE],
                                 default => [],
                             };
 
-                            if (!in_array($newStatus, $allowedTransitions)) {
+                            $isStatusStay = ($newStatus === $oldStatus);
+                            $isAllowed = in_array($newStatus, $allowedTransitions);
+
+                            if (!$isStatusStay && !$isAllowed) {
                                 Notification::make()
                                     ->title('Transisi Status Gagal')
                                     ->body("Status {$oldStatus->getLabel()} tidak bisa diubah langsung ke {$newStatus->getLabel()}.")
@@ -381,11 +396,25 @@ class ExamResource extends Resource
                                 }
                             }
 
-                            $record->update(['status' => $newStatus]);
+                            $message = "Ujian kini berstatus {$newStatus->getLabel()}.";
+
+                            if ($additionalMinutes > 0) {
+                                $baseTime = $record->end_time->isPast() ? now() : $record->end_time;
+
+                                $record->end_time = $baseTime->addMinutes($additionalMinutes);
+
+                                $record->status = ExamStatus::ACTIVE;
+
+                                $message .= " Dan waktu selesai diperpanjang {$additionalMinutes} menit.";
+                            } else {
+                                $record->status = $newStatus;
+                            }
+
+                            $record->save();
 
                             Notification::make()
                                 ->title('Status Berhasil Diperbarui')
-                                ->body("Ujian kini berstatus {$newStatus->getLabel()}")
+                                ->body($message)
                                 ->success()
                                 ->send();
                         }),
