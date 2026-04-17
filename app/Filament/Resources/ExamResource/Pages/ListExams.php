@@ -16,4 +16,9 @@ class ListExams extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getPollingInterval(): ?string
+    {
+        return '60s';
+    }
 }

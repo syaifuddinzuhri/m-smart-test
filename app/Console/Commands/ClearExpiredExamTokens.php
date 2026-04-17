@@ -39,7 +39,6 @@ class ClearExpiredExamTokens extends Command
                 $query->where('expired_at', '<', $threshold) // Kasus: Waktu habis
                     ->orWhere(function ($subQuery) use ($threshold) {
                         $subQuery->where('is_single_use', true)
-                            ->whereNotNull('used_at') // Kasus: Sudah terpakai
                             ->where('used_at', '<', $threshold);
                     });
             })

@@ -35,8 +35,7 @@ class UpdateExamStatus extends Command
             ->where('end_time', '>', $now)
             ->update(['status' => ExamStatus::ACTIVE->value]);
 
-        $closed = Exam::where('status', ExamStatus::ACTIVE->value)
-            ->where('end_time', '<=', $now)
+        $closed = Exam::where('end_time', '<=', $now)
             ->update(['status' => ExamStatus::CLOSED->value]);
 
         if ($activated > 0 || $closed > 0) {

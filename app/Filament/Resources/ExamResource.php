@@ -278,30 +278,12 @@ class ExamResource extends Resource
                     ->preload()
                     ->relationship('classrooms', 'name')
                     ->searchable(),
-
-
                 SelectFilter::make('status')
                     ->label('Filter Status')
-                    ->options([
-                        'belum_mulai' => 'Belum Mulai',
-                        'berlangsung' => 'Berlangsung',
-                        'selesai' => 'Selesai',
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        $now = now();
-                        return $query->when($data['value'], function ($query, $value) use ($now) {
-                            if ($value === 'belum_mulai') {
-                                return $query->where('start_time', '>', $now);
-                            }
-                            if ($value === 'berlangsung') {
-                                return $query->where('start_time', '<=', $now)
-                                    ->where('end_time', '>=', $now);
-                            }
-                            if ($value === 'selesai') {
-                                return $query->where('end_time', '<', $now);
-                            }
-                        });
-                    }),
+                    ->options(ExamStatus::class)
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
             ])
             ->filtersFormColumns(2)
             ->filtersLayout(Tables\Enums\FiltersLayout::Modal)
