@@ -26,7 +26,7 @@
                 </div>
             </x-slot>
 
-            <ul class="space-y-2 text-sm text-gray-600 list-disc list-inside">
+            <ul class="space-y-2 text-xs text-gray-600 list-disc list-inside">
                 <li>Gunakan <strong>Template Resmi</strong> dari tombol pojok kanan atas.</li>
                 <li>Sistem menggunakan <strong>Atomicity</strong>: 1 baris salah, semua gagal import (Rollback).</li>
                 <li>Pastikan file <code>.docx</code> tidak dalam keadaan terproteksi atau terkunci.</li>
@@ -39,7 +39,7 @@
             </ul>
 
             <div class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                <p class="font-bold text-xs uppercase mb-1">Contoh Isi ZIP:</p>
+                <p class="font-bold text-xs uppercase">Contoh Isi ZIP:</p>
                 <code class="text-xs block whitespace-pre-line">
                     📂 soal.zip
                     ├── soal.docx / soal.xlsx (Nama file harus ini)
@@ -50,8 +50,6 @@
             </div>
         </x-filament::section>
 
-        {{-- Section 2: Petunjuk Matematika & Arab (Baru) --}}
-        {{-- Section 2: Petunjuk Matematika & Arab (Optimasi Full Word) --}}
         <x-filament::section>
             <x-slot name="heading">
                 <div class="flex items-center gap-2 text-primary-600">
@@ -74,7 +72,7 @@
                 <div class="space-y-3">
                     {{-- Instruksi Matematika --}}
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <p class="text-[10px] font-bold text-primary-600 uppercase mb-2">1. Matematika (Fitur Equation)
+                        <p class="text-xs font-bold text-primary-600 uppercase mb-2">1. Matematika (Fitur Equation)
                         </p>
                         <ul class="text-xs text-gray-600 space-y-2">
                             <li class="flex items-start gap-2">
@@ -87,7 +85,7 @@
                             </li>
                         </ul>
                         <div
-                            class="mt-2 p-2 bg-white rounded border flex flex-col gap-4 border-gray-200 font-mono text-[10px] text-center italic">
+                            class="mt-2 p-2 bg-white rounded border flex flex-col gap-4 border-gray-200 font-mono text-xs text-center italic">
                             <div>
                                 Contoh: <span class="text-blue-600"> [Objek Equation] </span> &rarr; $\frac{-b \pm
                                 \sqrt{D}}{2a}$
@@ -110,7 +108,7 @@
 
                     {{-- Instruksi Arab --}}
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <p class="text-[10px] font-bold text-emerald-600 uppercase mb-2">2. Teks Arab (Native Font)</p>
+                        <p class="text-xs font-bold text-emerald-600 uppercase mb-2">2. Teks Arab (Native Font)</p>
                         <ul class="text-xs text-gray-600 space-y-2">
                             <li class="flex items-start gap-2">
                                 <span class="text-emerald-500 font-bold">•</span>
@@ -129,7 +127,7 @@
                 </div>
 
                 {{-- Footer Note --}}
-                <p class="text-[10px] text-gray-400 italic">
+                <p class="text-xs text-gray-400 italic">
                     * Sistem akan mengonversi objek Word di atas menjadi format digital yang mendukung tampilan mobile &
                     desktop secara otomatis.
                 </p>

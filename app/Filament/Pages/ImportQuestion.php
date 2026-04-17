@@ -98,7 +98,7 @@ class ImportQuestion extends Page
                                 ])
                                 ->extraAttributes(['class' => 'h-full'])
                                 ->helperText(new HtmlString('
-    <div class="text-sm space-y-2">
+    <div class="text-xs space-y-2">
         <p>Ketentuan Unggah:</p>
         <ul class="list-disc ml-4 space-y-1">
             <li>Mendukung file <b>.xlsx</b>, <b>.docx</b>, atau <b>.zip</b>.</li>
