@@ -32,15 +32,14 @@
     <script>
         function updateClock() {
             const now = new Date();
-            const time = now.toLocaleTimeString("id-ID", {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            });
+
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
             const el = document.getElementById("clock");
             if (el) {
-                el.innerText = time + " WIB";
+                el.innerText = `${h}:${m}:${s} WIB`;
             }
         }
 

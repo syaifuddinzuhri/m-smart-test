@@ -106,3 +106,60 @@ if (!function_exists('getDeviceInfo')) {
         return "{$os} ({$device}) - {$browser}";
     }
 }
+
+
+if (!function_exists('moveTempToPermanent')) {
+    /**
+     * Memindahkan file dari folder temporary ke folder permanen
+     * dan mengupdate path di dalam konten teks (HTML).
+     *
+     * @param string $uploadToken Token unik folder temp
+     * @param string $folderName Nama folder tujuan (misal: 'questions')
+     * @param string $recordId ID dari record (untuk subfolder)
+     * @param mixed $content Konten teks (String) atau Array (untuk Repeater) yang perlu diupdate path-nya
+     * @param string $disk Nama disk storage
+     * @return mixed Konten yang sudah diupdate path-nya
+     */
+    function moveTempToPermanent(string $uploadToken, string $folderName, $recordId, $content, string $disk = 'public')
+    {
+        $tempPath = "{$folderName}/temp/{$uploadToken}";
+        $finalPath = "{$folderName}/{$recordId}";
+
+        if (!Storage::disk($disk)->exists($tempPath)) {
+            return $content;
+        }
+
+        // 1. Pastikan folder tujuan ada
+        if (!Storage::disk($disk)->exists($finalPath)) {
+            Storage::disk($disk)->makeDirectory($finalPath);
+        }
+
+        // 2. Pindahkan semua file fisik
+        $files = Storage::disk($disk)->files($tempPath);
+        foreach ($files as $file) {
+            $fileName = basename($file);
+            Storage::disk($disk)->move($file, "{$finalPath}/{$fileName}");
+        }
+
+        // 3. Update path di dalam konten (bisa string tunggal atau array repeater)
+        $oldPathString = "storage/{$tempPath}"; // Path yang biasanya tertulis di HTML RichEditor
+        $newPathString = "storage/{$finalPath}";
+
+        if (is_array($content)) {
+            // Jika konten berupa array (seperti data dari Repeater)
+            array_walk_recursive($content, function (&$item) use ($oldPathString, $newPathString) {
+                if (is_string($item)) {
+                    $item = str_replace($oldPathString, $newPathString, $item);
+                }
+            });
+        } else if (is_string($content)) {
+            // Jika konten berupa string tunggal (seperti RichEditor biasa)
+            $content = str_replace($oldPathString, $newPathString, $content);
+        }
+
+        // 4. Hapus folder temp yang sudah kosong
+        Storage::disk($disk)->deleteDirectory($tempPath);
+
+        return $content;
+    }
+}

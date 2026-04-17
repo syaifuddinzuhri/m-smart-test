@@ -45,12 +45,19 @@
                             <li>Gunakan <strong>Template Resmi</strong> dari tombol pojok kanan atas.</li>
                             <li>Sistem menggunakan <strong>Atomicity</strong>: 1 baris salah, semua gagal import
                                 (Rollback).</li>
+
+                            <li>
+                                Disarankan menyisipkan <strong>Gambar langsung di dalam file Word</strong>. Metode ini
+                                lebih fleksibel dalam menangani.
+                            </li>
+
                             <li>Pastikan file <code>.docx</code> tidak dalam keadaan terproteksi atau terkunci.</li>
-                            <li>Jika menggunakan lampiran, bungkus file soal dan dokumen dalam satu <b>ZIP</b>.</li>
-                            <li>Nama file <b>wajib</b> mengikuti nomor urut soal (Contoh: <code
+                            <li>Jika menggunakan lampiran (file luar), bungkus file soal dan dokumen dalam satu
+                                <b>ZIP</b>.</li>
+                            <li>Nama file lampiran <b>wajib</b> mengikuti nomor urut soal (Contoh: <code
                                     class="bg-gray-100 px-1">soal-1.png</code>).</li>
-                            <li>Format didukung: <b>PNG, JPG, GIF, MP3, MP4, WAV, WEBM</b>.</li>
-                            <li>Satu soal hanya bisa untuk 1 lampiran.</li>
+                            <li>Format lampiran didukung: <b>PNG, JPG, GIF, MP3, MP4, WAV, WEBM</b>.</li>
+                            <li>Satu soal hanya bisa memiliki 1 lampiran file luar (via ZIP).</li>
                         </ul>
 
                         <div class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">

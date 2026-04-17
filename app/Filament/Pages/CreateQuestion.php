@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
@@ -12,9 +13,11 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CreateQuestion extends Page
@@ -33,7 +36,10 @@ class CreateQuestion extends Page
     public function mount(): void
     {
         $this->form->fill();
-        $this->data['options_count'] = 3;
+        $this->form->fill([
+            'upload_token' => (string) Str::uuid(), // Generate saat buka halaman
+            'options_count' => 3,
+        ]);
     }
 
     public function form(Form $form): Form
@@ -101,11 +107,19 @@ class CreateQuestion extends Page
                 // ========================
                 Section::make('Konten Pertanyaan')
                     ->schema([
+                        Hidden::make('upload_token')
+                            ->default(fn() => (string) Str::uuid()),
+
                         RichEditor::make('question_text')
                             ->label("Isi Soal")
                             ->required()
                             ->live(onBlur: true)
                             ->reactive()
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsVisibility('public')
+                            ->fileAttachmentsDirectory(function (Get $get, $record) {
+                                return "questions/temp/" . $get('upload_token');
+                            })
                             ->columnSpanFull(),
 
                         FileUpload::make('attachments')
@@ -139,13 +153,13 @@ class CreateQuestion extends Page
                             ->live(onBlur: true)
                             ->reactive(),
 
-                        TextInput::make('external_link')
-                            ->label('Link Eksternal (YouTube, dll)')
-                            ->url()
-                            ->live(onBlur: true)
-                            ->reactive()
-                            ->placeholder('https://...')
-                            ->columnSpanFull(),
+                        // TextInput::make('external_link')
+                        //     ->label('Link Eksternal (YouTube, dll)')
+                        //     ->url()
+                        //     ->live(onBlur: true)
+                        //     ->reactive()
+                        //     ->placeholder('https://...')
+                        //     ->columnSpanFull(),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -340,11 +354,27 @@ class CreateQuestion extends Page
                 'external_link' => $data['external_link'] ?? null,
             ]);
 
+            $finalQuestionText = moveTempToPermanent(
+                $data['upload_token'],
+                'questions',
+                $question->id,
+                $data['question_text']
+            );
+
+            $question->update(['question_text' => $finalQuestionText]);
+
             // ========================
             // SAVE OPTIONS
             // ========================
             if (!empty($data['options'])) {
-                foreach ($data['options'] as $index => $opt) {
+                $finalOptions = moveTempToPermanent(
+                    $data['upload_token'],
+                    'questions',
+                    $question->id,
+                    $data['options']
+                );
+
+                foreach ($finalOptions as $index => $opt) {
                     $question->options()->create([
                         'id' => Str::uuid(),
                         'label' => $opt['label'],

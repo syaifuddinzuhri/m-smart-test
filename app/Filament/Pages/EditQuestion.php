@@ -6,6 +6,7 @@ use Filament\Pages\Page;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,6 +42,7 @@ class EditQuestion extends Page
         ])->find($record->id);
 
         $this->form->fill([
+            'upload_token' => (string) Str::uuid(),
             'subject_id' => $this->record->subject_id,
             'question_category_id' => $this->record->question_category_id,
             'question_type' => $this->record->question_type->value,
@@ -121,12 +124,17 @@ class EditQuestion extends Page
                 // ========================
                 Section::make('Konten Pertanyaan')
                     ->schema([
+                        Hidden::make('upload_token')
+                            ->default(fn() => (string) Str::uuid()),
+
                         RichEditor::make('question_text')
                             ->label("Isi Soal")
                             ->required()
                             ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('questions/content')
                             ->fileAttachmentsVisibility('public')
+                            ->fileAttachmentsDirectory(function (Get $get) {
+                                return "questions/temp/" . $get('upload_token');
+                            })
                             ->live(onBlur: true)
                             ->reactive()
                             ->columnSpanFull(),
@@ -162,13 +170,13 @@ class EditQuestion extends Page
                             ->live(onBlur: true)
                             ->reactive(),
 
-                        TextInput::make('external_link')
-                            ->label('Link Eksternal (YouTube, dll)')
-                            ->url()
-                            ->live(onBlur: true)
-                            ->reactive()
-                            ->placeholder('https://...')
-                            ->columnSpanFull(),
+                        // TextInput::make('external_link')
+                        //     ->label('Link Eksternal (YouTube, dll)')
+                        //     ->url()
+                        //     ->live(onBlur: true)
+                        //     ->reactive()
+                        //     ->placeholder('https://...')
+                        //     ->columnSpanFull(),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -346,6 +354,12 @@ class EditQuestion extends Page
         DB::beginTransaction();
 
         try {
+            $newQuestionText = moveTempToPermanent(
+                $data['upload_token'],
+                'questions',
+                $this->record->id,
+                $data['question_text']
+            );
 
             // ========================
             // CREATE QUESTION
@@ -354,7 +368,7 @@ class EditQuestion extends Page
                 'subject_id' => $data['subject_id'],
                 'question_category_id' => $data['question_category_id'],
                 'question_type' => $data['question_type'],
-                'question_text' => $data['question_text'],
+                'question_text' => $newQuestionText,
                 'correct_answer_text' => $data['correct_answer_text'] ?? null,
                 'external_link' => $data['external_link'] ?? null,
             ]);
@@ -365,8 +379,15 @@ class EditQuestion extends Page
             $this->record->options()->delete();
 
             if (!empty($data['options'])) {
+                $newOptions = moveTempToPermanent(
+                    $data['upload_token'],
+                    'questions',
+                    $this->record->id,
+                    $data['options']
+                );
+
                 $labels = range('A', 'E');
-                foreach ($data['options'] as $index => $opt) {
+                foreach ($newOptions as $index => $opt) {
                     $this->record->options()->create([
                         'id' => Str::uuid(),
                         'label' => $labels[$index] ?? $opt['label'],

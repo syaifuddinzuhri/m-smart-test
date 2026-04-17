@@ -52,6 +52,7 @@
         unicode-bidi: plaintext;
         text-align: start !important;
         line-height: 2;
+        visibility: visible;
         font-family: ui-sans-serif, system-ui, 'Amiri', 'Traditional Arabic', serif;
     }
 
@@ -60,4 +61,8 @@
         line-height: 1.8;
     }
 
+    mark {
+        background-color: yellow;
+        color: black;
+    }
 </style>

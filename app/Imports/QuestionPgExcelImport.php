@@ -48,6 +48,7 @@ class QuestionPgExcelImport implements ToCollection
 
         $maxOptionsFound = 0;
         $preparedData = [];
+        $isSequenceBroken = false;
 
         // --- STAGE 1: SCANNING & VALIDASI ---
         foreach ($chunks as $index => $chunk) {
@@ -57,8 +58,19 @@ class QuestionPgExcelImport implements ToCollection
             $firstRow = $chunk->first();
             $questionText = $firstRow[1] ?? null;
 
-            if (empty(trim($questionText)))
+            if (empty(trim($questionText))) {
+                $isSequenceBroken = true;
                 continue;
+            }
+
+            if ($isSequenceBroken && !empty($questionText)) {
+                $this->addError(
+                    $excelRow,
+                    $nomorSoal,
+                    $questionText,
+                    "Nomor soal melompat. Nomor soal sebelumnya kosong, harap pastikan soal berurutan tanpa ada nomor yang dilewati."
+                );
+            }
 
             $optionsData = [];
             $correctCount = 0;
@@ -116,6 +128,10 @@ class QuestionPgExcelImport implements ToCollection
         // Jika ada error di tahap validasi, hentikan sebelum masuk DB
         if (!empty($this->importErrors)) {
             throw new Exception("Validasi Gagal");
+        }
+
+        if (empty($preparedData)) {
+            throw new Exception("Gagal import data tidak terbaca");
         }
 
         // --- STAGE 2: PROSES INSERT (ATOMIC) ---

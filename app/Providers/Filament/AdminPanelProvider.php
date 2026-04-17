@@ -108,6 +108,18 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::HEAD_END,
                 fn(): string => Blade::render('filament.components.custom-styles'),
             )
+            ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn(): string => view('components.latex-renderer')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn(): string => view('components.lightbox-overlay')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn(): string => view('components.lightbox-script')->render(),
+            )
             ->assets([
                 Css::make('katex-css', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css'),
                 Js::make('katex-js', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'),

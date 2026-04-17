@@ -1,5 +1,4 @@
 <x-filament::page>
-
     {{-- FILTER --}}
     <div>
         {{ $this->form }}
@@ -43,21 +42,34 @@
         {{-- TABS (INTERAKTIF) --}}
         <div x-data="{ tab: 'pg' }">
 
-            <div class="flex gap-2 mb-6">
-                <button @click="tab='pg'" :class="tab === 'pg' ? 'bg-primary-600 text-white' : 'bg-gray-100'"
-                    class="px-4 py-2 rounded-xl text-sm font-medium">
-                    Pilihan Ganda
-                </button>
+            <div class="flex gap-2 justify-between mb-6">
+                <div class="flex gap-2">
+                    <button @click="tab='pg'" :class="tab === 'pg' ? 'bg-primary-600 text-white' : 'bg-gray-100'"
+                        class="px-4 py-2 rounded-xl text-sm font-medium">
+                        Pilihan Ganda
+                    </button>
 
-                <button @click="tab='short'" :class="tab === 'short' ? 'bg-blue-600 text-white' : 'bg-gray-100'"
-                    class="px-4 py-2 rounded-xl text-sm font-medium">
-                    Jawaban Singkat
-                </button>
+                    <button @click="tab='short'" :class="tab === 'short' ? 'bg-blue-600 text-white' : 'bg-gray-100'"
+                        class="px-4 py-2 rounded-xl text-sm font-medium">
+                        Jawaban Singkat
+                    </button>
 
-                <button @click="tab='essay'" :class="tab === 'essay' ? 'bg-orange-600 text-white' : 'bg-gray-100'"
-                    class="px-4 py-2 rounded-xl text-sm font-medium">
-                    Essay
-                </button>
+                    <button @click="tab='essay'"
+                        :class="tab === 'essay' ? 'bg-orange-600 text-white' : 'bg-gray-100'"
+                        class="px-4 py-2 rounded-xl text-sm font-medium">
+                        Essay
+                    </button>
+                </div>
+
+                @if ($this->filters['subject_id'] && $this->filters['question_category_id'] && $summary['total'] > 0)
+                    <div class="flex justify-end">
+                        <button wire:click="mountAction('bulkDeleteQuestion')"
+                            class="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl border border-red-200 transition-all duration-200 text-sm font-semibold shadow-sm">
+                            <x-heroicon-m-trash class="w-4 h-4" />
+                            Hapus Semua
+                        </button>
+                    </div>
+                @endif
             </div>
 
             {{-- ========================
@@ -104,16 +116,8 @@
                         <div class="p-4">
                             {{-- KONTEN PERTANYAAN: Ukuran text disesuaikan --}}
                             <div class="prose max-w-none mt-6">
-                                <div class="text-gray-800 text-base font-medium leading-snug soal-content"
-                                    x-data="{}" x-init="renderMathInElement($el, {
-                                        delimiters: [
-                                            { left: '$$', right: '$$', display: true },
-                                            { left: '$', right: '$', display: false },
-                                            { left: '\\(', right: '\\)', display: false },
-                                            { left: '\\[', right: '\\]', display: true }
-                                        ],
-                                        throwOnError: false
-                                    })">
+                                <div class="prose max-w-none mt-6 text-gray-800 text-base font-medium leading-snug soal-content"
+                                    >
                                     {!! $q->question_text !!}
                                 </div>
                             </div>
@@ -145,16 +149,7 @@
                                                 'prose max-w-none text-[13px] soal-content',
                                                 'font-semibold text-emerald-900' => $opt->is_correct,
                                                 'text-gray-600' => !$opt->is_correct,
-                                            ]) x-data="{}"
-                                                x-init="renderMathInElement($el, {
-                                                    delimiters: [
-                                                        { left: '$$', right: '$$', display: true },
-                                                        { left: '$', right: '$', display: false },
-                                                        { left: '\\(', right: '\\)', display: false },
-                                                        { left: '\\[', right: '\\]', display: true }
-                                                    ],
-                                                    throwOnError: false
-                                                })">
+                                            ]) >
                                                 {!! $opt->text !!}
                                             </div>
                                         </div>
@@ -231,15 +226,7 @@
                             {{-- PERTANYAAN --}}
                             <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug soal-content"
-                                    x-data="{}" x-init="renderMathInElement($el, {
-                                        delimiters: [
-                                            { left: '$$', right: '$$', display: true },
-                                            { left: '$', right: '$', display: false },
-                                            { left: '\\(', right: '\\)', display: false },
-                                            { left: '\\[', right: '\\]', display: true }
-                                        ],
-                                        throwOnError: false
-                                    })">
+                                    x-data="{}" >
                                     {!! $q->question_text !!}
                                 </div>
                             </div>
@@ -315,15 +302,7 @@ ESSAY
                             {{-- PERTANYAAN --}}
                             <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug soal-content"
-                                    x-data="{}" x-init="renderMathInElement($el, {
-                                        delimiters: [
-                                            { left: '$$', right: '$$', display: true },
-                                            { left: '$', right: '$', display: false },
-                                            { left: '\\(', right: '\\)', display: false },
-                                            { left: '\\[', right: '\\]', display: true }
-                                        ],
-                                        throwOnError: false
-                                    })">
+                                    x-data="{}" >
                                     {!! $q->question_text !!}
                                 </div>
                             </div>
@@ -353,5 +332,4 @@ ESSAY
         </div>
 
     @endif
-
 </x-filament::page>

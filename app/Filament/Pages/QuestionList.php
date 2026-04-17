@@ -160,6 +160,44 @@ class QuestionList extends Page implements HasActions
             });
     }
 
+    public function bulkDeleteQuestionAction(): Action
+    {
+        return Action::make('bulkDeleteQuestion')
+            ->label('Hapus Semua Soal di Topik dan Mata Pelajaran Ini')
+            ->icon('heroicon-m-trash')
+            ->requiresConfirmation()
+            ->modalHeading('Hapus Semua Soal?')
+            ->modalDescription('Apakah Anda yakin ingin menghapus SELURUH soal pada Mata Pelajaran dan Topik yang sedang terpilih ini? Tindakan ini tidak dapat dibatalkan.')
+            ->modalSubmitActionLabel('Ya, Hapus Semua')
+            ->color('danger')
+            ->visible(fn() => $this->filters['subject_id'] && $this->filters['question_category_id'])
+            ->action(function () {
+                $count = Question::where('subject_id', $this->filters['subject_id'])
+                    ->where('question_category_id', $this->filters['question_category_id'])
+                    ->count();
+
+                if ($count > 0) {
+                    Question::where('subject_id', $this->filters['subject_id'])
+                        ->where('question_category_id', $this->filters['question_category_id'])
+                        ->delete();
+
+                    Notification::make()
+                        ->title($count . ' Soal berhasil dihapus')
+                        ->success()
+                        ->send();
+
+                    // Reset pagination ke halaman 1
+                    $this->resetPage('pgPage');
+                    $this->resetPage('shortPage');
+                    $this->resetPage('essayPage');
+                } else {
+                    Notification::make()
+                        ->title('Tidak ada soal untuk dihapus')
+                        ->warning()
+                        ->send();
+                }
+            });
+    }
     public function getEditUrl($id)
     {
         return EditQuestion::getUrl(['record' => $id]);

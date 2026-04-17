@@ -91,6 +91,18 @@ class StudentPanelProvider extends PanelProvider
                 fn(): string => Blade::render('components.realtime-server-time'),
             )
             ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn(): string => view('components.latex-renderer')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn(): string => view('components.lightbox-overlay')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn(): string => view('components.lightbox-script')->render(),
+            )
+            ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn(): string => Blade::render('
                     <script src="https://cdn.tailwindcss.com"></script>

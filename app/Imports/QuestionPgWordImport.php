@@ -5,9 +5,6 @@ namespace App\Imports;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\QuestionOption;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\Element\Table;
-use PhpOffice\PhpWord\Element\Cell;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +16,7 @@ class QuestionPgWordImport
     protected $categoryId;
     protected $basePath;
     protected $fileMap = [];
+    protected $tempMediaPath;
 
     public array $importErrors = [];
 
@@ -27,6 +25,7 @@ class QuestionPgWordImport
         $this->subjectId = $subjectId;
         $this->categoryId = $categoryId;
         $this->basePath = $basePath;
+        $this->tempMediaPath = storage_path('app/temp_media_' . Str::random(10));
         $this->indexFiles();
     }
 
@@ -88,7 +87,7 @@ class QuestionPgWordImport
     public function convertDocxToMarkdown($filePath)
     {
         if (!file_exists($filePath)) {
-            throw new Exception("File sumber Docx tidak ditemukan.");
+            throw new Exception("File sumber Docx tidak ditemukan. Silahkan refresh halaman terlebih dahulu!");
         }
 
         $pandoc = $this->getPandocPath();
@@ -96,17 +95,15 @@ class QuestionPgWordImport
         $tempFile = storage_path('app/temp_' . Str::random(10) . '.html');
 
         $command = sprintf(
-            '%s %s -f docx -t html --columns=1000 -o %s 2>&1',
+            '%s %s -f docx -t html --standalone --extract-media=%s -o %s 2>&1',
             $pandoc,
             escapeshellarg($filePath),
+            escapeshellarg($this->tempMediaPath),
             escapeshellarg($tempFile)
         );
 
-        // $tempFile = storage_path('app/temp_' . Str::random(10) . '.md');
-
-        // // Menambahkan 2>&1 untuk menangkap pesan error dari sistem operasi
         // $command = sprintf(
-        //     '%s %s -f docx -t gfm+pipe_tables --columns=1000 -o %s 2>&1',
+        //     '%s %s -f docx -t html --standalone -o %s 2>&1',
         //     $pandoc,
         //     escapeshellarg($filePath),
         //     escapeshellarg($tempFile)
@@ -136,21 +133,34 @@ class QuestionPgWordImport
 
         // --- MODE 1: HTML TABLE (Sering muncul di Ubuntu/Mac untuk sel kompleks) ---
         if (preg_match('/<table/i', $markdown)) {
-            preg_match_all('/<tr[^>]*>(.*?)<\/tr>/is', $markdown, $rows);
+            $dom = new \DOMDocument();
+            libxml_use_internal_errors(true);
 
-            foreach ($rows[1] as $rowHtml) {
-                preg_match_all('/<t[dh][^>]*>(.*?)<\/t[dh]>/is', $rowHtml, $cols);
+            // Konversi ke HTML-ENTITIES agar karakter UTF-8 (Arab/Simbol) tidak hilang
+            $content = mb_convert_encoding($markdown, 'HTML-ENTITIES', 'UTF-8');
+            $dom->loadHTML($content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+            libxml_clear_errors();
 
-                $cleanCols = array_map(function ($col) {
-                    // Konversi tag paragraph/break menjadi newline agar teks tidak menyatu
-                    $col = preg_replace('/<(p|br)[^>]*>/i', '', $col);
-                    $col = preg_replace('/<\/(p|br)>/i', "\n", $col);
-                    $col = html_entity_decode($col); // Decode entity seperti &nbsp; atau &quot;
-                    return trim(strip_tags($col, '<span><div><math>')); // Amankan tag rumus
-                }, $cols[1]);
+            $xpath = new \DOMXPath($dom);
+            $mainTable = $xpath->query('//table')->item(0);
 
-                if (!empty($cleanCols))
-                    $tableData[] = $cleanCols;
+            if ($mainTable) {
+                // Ambil baris dari tbody jika ada, jika tidak langsung dari table
+                $rows = $xpath->query('.//tr', $mainTable);
+
+                foreach ($rows as $row) {
+                    $cells = $xpath->query('./td | ./th', $row);
+                    $rowData = [];
+                    foreach ($cells as $cell) {
+                        $innerHtml = '';
+                        foreach ($cell->childNodes as $child) {
+                            $innerHtml .= $dom->saveHTML($child);
+                        }
+                        $rowData[] = $this->finalizeHtml($innerHtml);
+                    }
+                    if (!empty($rowData))
+                        $tableData[] = $rowData;
+                }
             }
 
             if (!empty($tableData))
@@ -190,6 +200,93 @@ class QuestionPgWordImport
         return $tableData;
     }
 
+    private function finalizeHtml($html)
+    {
+        if (empty($html))
+            return "";
+
+        $html = html_entity_decode($html);
+
+        $html = preg_replace('/<table[^>]*>.*?<\/table>/is', '', $html);
+
+        $allowedTags = '<span><strong><em><u><s><ul><ol><li><p><br><i><b><mark><sub><sup><math><img><div>';
+        $cleaned = strip_tags($html, $allowedTags);
+
+        // Bersihkan LaTeX
+        $cleaned = $this->cleanLatex($cleaned);
+
+        return trim($cleaned);
+    }
+
+    private function processHtmlImages($html, $questionId)
+    {
+        if (empty($html) || stripos($html, '<img') === false)
+            return $html;
+
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="UTF-8"><div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $images = $dom->getElementsByTagName('img');
+        foreach ($images as $img) {
+            $src = $img->getAttribute('src');
+
+            // LOGIKA PENENTUAN PATH FISIK FILE
+            $sourcePath = null;
+
+            // Cek 1: Jika src sudah merupakan path absolut yang valid
+            if (file_exists($src)) {
+                $sourcePath = $src;
+            }
+            // Cek 2: Jika src adalah path absolut tapi kurang "/" di depan (kasus MacOS/Linux tertentu)
+            elseif (file_exists('/' . $src)) {
+                $sourcePath = '/' . $src;
+            }
+            // Cek 3: Jika src adalah path relatif (misal: "media/image1.png")
+            else {
+                $cleanSrc = ltrim($src, './');
+                $testPath = $this->tempMediaPath . DIRECTORY_SEPARATOR . $cleanSrc;
+                if (file_exists($testPath)) {
+                    $sourcePath = $testPath;
+                }
+            }
+
+            // Jika file ditemukan, proses pemindahan ke Storage Laravel
+            if ($sourcePath && file_exists($sourcePath)) {
+                $extension = pathinfo($sourcePath, PATHINFO_EXTENSION); // Benar
+                $filename = "img_" . Str::random(10) . "." . $extension;
+
+                $storageFolder = "questions/{$questionId}";
+                $storagePath = "{$storageFolder}/{$filename}";
+
+                // Simpan ke storage permanen (public)
+                Storage::disk('public')->put($storagePath, file_get_contents($sourcePath));
+
+                // Update SRC menjadi URL publik (misal: /storage/questions/1/img_abc.png)
+                $img->setAttribute('src', Storage::url($storagePath));
+
+                // Tambahkan style agar rapi
+                $img->setAttribute('style', 'max-width: 50%; height: auto;');
+                $img->setAttribute('class', 'rounded-lg shadow-sm my-2');
+            } else {
+                // Jika file tetap tidak ditemukan, hapus tag img agar tidak muncul icon gambar pecah
+                // atau biarkan saja untuk debugging.
+                // $img->parentNode->removeChild($img);
+            }
+        }
+
+        $container = $dom->getElementsByTagName('div')->item(0);
+        $result = '';
+        if ($container) {
+            foreach ($container->childNodes as $node) {
+                $result .= $dom->saveHTML($node);
+            }
+        }
+
+        return $result;
+    }
+
     private function cleanLatex($text)
     {
         // Ubah \( ... \) menjadi $ ... $ dan \[ ... \] menjadi $$ ... $$
@@ -218,6 +315,7 @@ class QuestionPgWordImport
 
         $maxOptionsFound = 0;
         $preparedData = [];
+        $isSequenceBroken = false;
 
         // --- STAGE 1: VALIDASI & PREPARASI ---
         foreach ($chunks as $index => $chunk) {
@@ -226,8 +324,19 @@ class QuestionPgWordImport
 
             // Kolom 1 di Markdown biasanya Soal
             $questionText = trim($chunk[0][1] ?? '');
-            if (empty($questionText))
+            if (empty($questionText)) {
+                $isSequenceBroken = true;
                 continue;
+            }
+
+            if ($isSequenceBroken && !empty($questionText)) {
+                $this->addError(
+                    $visualRow,
+                    $nomorSoal,
+                    $questionText,
+                    "Nomor soal melompat. Nomor soal sebelumnya kosong, harap pastikan soal berurutan tanpa ada nomor yang dilewati."
+                );
+            }
 
             $optionsData = [];
             $correctCount = 0;
@@ -263,7 +372,7 @@ class QuestionPgWordImport
             $preparedData[] = [
                 'visual_row' => $visualRow,
                 'no' => $nomorSoal,
-                'text' => $this->cleanLatex($questionText),
+                'text' => $questionText,
                 'options' => $optionsData,
                 'correct_count' => $correctCount,
                 'attachment' => $foundFile
@@ -283,6 +392,10 @@ class QuestionPgWordImport
             throw new Exception("Validasi Gagal");
         }
 
+        if (empty($preparedData)) {
+            throw new Exception("Gagal import data tidak terbaca");
+        }
+
         // --- STAGE 2: PROSES INSERT ---
         foreach ($preparedData as $item) {
             try {
@@ -296,6 +409,10 @@ class QuestionPgWordImport
                     'question_text' => $item['text'],
                     'question_type' => $type,
                 ]);
+
+                // PROSES GAMBAR DI DALAM SOAL & OPSI
+                $finalText = $this->processHtmlImages($item['text'], $question->id);
+                $question->update(['question_text' => $finalText]);
 
                 // Simpan Opsi
                 foreach ($item['options'] as $idx => $opt) {
@@ -322,6 +439,10 @@ class QuestionPgWordImport
             } catch (Exception $e) {
                 $this->addError($item['visual_row'], $item['no'], $item['text'], "Database Error: " . $e->getMessage());
                 throw $e; // Trigger rollback
+            } finally {
+                if (File::exists($this->tempMediaPath)) {
+                    File::deleteDirectory($this->tempMediaPath);
+                }
             }
         }
     }
@@ -367,34 +488,5 @@ class QuestionPgWordImport
             'question' => Str::limit($text, 50),
             'reason' => $reason
         ];
-    }
-
-    private function findTable($phpWord)
-    {
-        foreach ($phpWord->getSections() as $section) {
-            foreach ($section->getElements() as $element) {
-                if ($element instanceof Table)
-                    return $element;
-            }
-        }
-        return null;
-    }
-
-    private function getCellValue($cell)
-    {
-        if (!$cell instanceof Cell)
-            return '';
-        $text = '';
-        foreach ($cell->getElements() as $element) {
-            if (method_exists($element, 'getText')) {
-                $text .= $element->getText();
-            } elseif (method_exists($element, 'getElements')) {
-                foreach ($element->getElements() as $sub) {
-                    if (method_exists($sub, 'getText'))
-                        $text .= $sub->getText();
-                }
-            }
-        }
-        return trim($text);
     }
 }
