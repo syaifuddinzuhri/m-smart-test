@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExamAnswer extends Model
 {
@@ -22,7 +23,11 @@ class ExamAnswer extends Model
         return $this->belongsTo(Question::class);
     }
 
-    // Relasi untuk Pilihan Ganda (Multiple Choice)
+    public function options(): HasMany
+    {
+        return $this->hasMany(ExamAnswerOption::class);
+    }
+
     public function selectedOptions(): BelongsToMany
     {
         return $this->belongsToMany(QuestionOption::class, 'exam_answer_options', 'exam_answer_id', 'question_option_id');

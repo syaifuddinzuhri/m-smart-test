@@ -6,6 +6,7 @@ use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\QuestionCategory;
 use App\Models\Subject;
+use Exception;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -150,12 +151,20 @@ class QuestionList extends Page implements HasActions
                 $question = Question::find($arguments['id']);
 
                 if ($question) {
-                    $question->delete();
+                    try {
+                        $question->delete();
+                        Notification::make()
+                            ->title('Soal berhasil dihapus')
+                            ->success()
+                            ->send();
+                    } catch (Exception $e) {
+                        Notification::make()
+                            ->title('Soal gagal dihapus')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
 
-                    Notification::make()
-                        ->title('Soal berhasil dihapus')
-                        ->success()
-                        ->send();
                 }
             });
     }
@@ -177,19 +186,27 @@ class QuestionList extends Page implements HasActions
                     ->count();
 
                 if ($count > 0) {
-                    Question::where('subject_id', $this->filters['subject_id'])
-                        ->where('question_category_id', $this->filters['question_category_id'])
-                        ->delete();
+                    try {
+                        Question::where('subject_id', $this->filters['subject_id'])
+                            ->where('question_category_id', $this->filters['question_category_id'])
+                            ->delete();
 
-                    Notification::make()
-                        ->title($count . ' Soal berhasil dihapus')
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title($count . ' Soal berhasil dihapus')
+                            ->success()
+                            ->send();
 
-                    // Reset pagination ke halaman 1
-                    $this->resetPage('pgPage');
-                    $this->resetPage('shortPage');
-                    $this->resetPage('essayPage');
+                        // Reset pagination ke halaman 1
+                        $this->resetPage('pgPage');
+                        $this->resetPage('shortPage');
+                        $this->resetPage('essayPage');
+                    } catch (Exception $e) {
+                        Notification::make()
+                            ->title('Soal gagal dihapus')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 } else {
                     Notification::make()
                         ->title('Tidak ada soal untuk dihapus')

@@ -29,19 +29,15 @@ class Exam extends Model
         parent::boot();
 
         static::deleting(function ($exam) {
-            // Hapus relasi pivot (classroom)
             $exam->classrooms()->detach();
-
-            // Hapus token & pertanyaan ujian
             $exam->tokens()->delete();
             $exam->questions()->delete();
-
-            // Hapus sesi ujian siswa
-            // Karena ExamSession punya child (answers & questionOrders),
-            // kita loop agar event deleting di model ExamSession juga terpicu (jika ada logic tambahan disana)
             $exam->sessions->each(function ($session) {
-                // Jawaban (exam_answers) dan Urutan (exam_question_orders)
-                // akan terhapus otomatis via Database Cascade dari Session
+                $session->answers->each(function ($answer) {
+                    $answer->options()->delete();
+                    $answer->delete();
+                });
+                $session->answers()->delete();
                 $session->delete();
             });
         });
