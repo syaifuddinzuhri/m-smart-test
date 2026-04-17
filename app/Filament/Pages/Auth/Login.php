@@ -49,6 +49,22 @@ class Login extends BaseLogin
         $panelId = filament()->getId();
         $role = $user->role->value;
 
+        if ($role === UserRole::STUDENT->value) {
+            $activeSession = \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if ($activeSession) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Gagal Login')
+                    ->body('Akun Anda sedang aktif di perangkat lain. Silakan hubungi Admin untuk reset sesi.')
+                    ->danger()
+                    ->send();
+
+                return null;
+            }
+        }
+
         if ($panelId === PanelType::STUDENT->value && $role !== UserRole::STUDENT->value)
             $this->throwFailureValidationException();
         if ($panelId === PanelType::ADMIN->value && $role === UserRole::STUDENT->value)

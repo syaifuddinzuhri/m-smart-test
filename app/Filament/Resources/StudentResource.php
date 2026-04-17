@@ -11,10 +11,13 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\ActionSize;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class StudentResource extends Resource
 {
@@ -153,8 +156,35 @@ class StudentResource extends Resource
                     ->preload(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('resetSession')
+                        ->label('Reset Sesi')
+                        ->icon('heroicon-m-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Reset Sesi Peserta?')
+                        ->modalDescription('Tindakan ini akan mengeluarkan peserta dari perangkat yang sedang aktif agar bisa login kembali.')
+                        ->modalSubmitActionLabel('Ya, Reset Sesi')
+                        ->action(function ($record) {
+                            if ($record->user) {
+                                DB::table('sessions')
+                                    ->where('user_id', $record->user->id)
+                                    ->delete();
+
+                                Notification::make()
+                                    ->title('Sesi ' . $record->user->name . ' berhasil direset')
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])
+                    ->label('Aksi')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size(ActionSize::Small)
+                    ->color('gray')
+                    ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
