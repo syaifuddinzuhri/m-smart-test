@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GenderType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,10 @@ class Student extends Model
     use HasUuids;
 
     protected $guarded = [];
+
+    protected $casts = [
+        'gender' => GenderType::class,
+    ];
 
     protected static function booted()
     {

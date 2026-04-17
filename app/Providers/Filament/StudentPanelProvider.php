@@ -11,6 +11,8 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -104,18 +106,13 @@ class StudentPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn(): string => Blade::render('
-                    <script src="https://cdn.tailwindcss.com"></script>
-                    <script>
-                        tailwind.config = {
-                            darkMode: "class",
-                            corePlugins: {
-                                preflight: false,
-                            }
-                        }
-                    </script>
-                '),
+                fn(): string => Blade::render('filament.components.custom-styles'),
             )
+            ->assets([
+                Css::make('katex-css', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css'),
+                Js::make('katex-js', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'),
+                Js::make('katex-auto-render', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js'),
+            ])
             ->spa();
     }
 }

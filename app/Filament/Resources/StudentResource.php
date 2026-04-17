@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\GenderType;
 use App\Enums\UserRole;
 use App\Filament\Resources\StudentResource\Pages;
 use App\Models\Student;
@@ -102,6 +103,12 @@ class StudentResource extends Resource
                             ->label('Tanggal Lahir')
                             ->native(false)
                             ->displayFormat('d/m/Y'),
+
+                        Select::make('gender')
+                            ->label('Jenis Kelamain')
+                            ->options(GenderType::class)
+                            ->live()
+                            ->required(),
                     ])->columns(2),
             ]);
     }

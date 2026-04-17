@@ -10,7 +10,7 @@
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h2 class="text-md md:text-xl font-black text-gray-900 leading-tight">{{ auth()->user()->name }}</h2>
-                    <p class="text-xs md:text-sm text-gray-500 font-medium">NISN: 00123456789</p>
+                    <p class="text-xs md:text-sm text-gray-500 font-medium">NISN: {{ $user->student?->nisn ?? '-' }}</p>
                 </div>
                 <span
                     class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
@@ -23,17 +23,27 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="space-y-1">
                 <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kelas & Jurusan</p>
-                <p class="text-sm font-semibold text-gray-800">XII Teknik Informatika - 1</p>
+                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->classroom?->name }} -
+                    {{ $user->student?->classroom?->major?->name }}</p>
             </div>
 
             <div class="space-y-1">
-                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tempat, Tanggal Lahir</p>
-                <p class="text-sm font-semibold text-gray-800">Jakarta, 12 Agustus 2008</p>
+                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tempat/Tanggal Lahir</p>
+                <p class="text-sm font-semibold text-gray-800">
+                    @if ($user->student?->pob && $user->student?->dob)
+                        {{ $user->student->pob }},
+                        {{ \Carbon\Carbon::parse($user->student->dob)->translatedFormat('d F Y') }}
+                    @elseif($user->student?->pob)
+                        {{ $user->student->pob }}, -
+                    @elseif($user->student?->dob)
+                        {{ \Carbon\Carbon::parse($user->student->dob)->translatedFormat('d F Y') }}
+                    @endif
+                </p>
             </div>
 
             <div class="space-y-1">
                 <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Jenis Kelamin</p>
-                <p class="text-sm font-semibold text-gray-800">Laki-laki</p>
+                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->gender?->getLabel() ?? '-' }}</p>
             </div>
         </div>
     </x-filament::section>

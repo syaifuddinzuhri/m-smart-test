@@ -3,6 +3,7 @@
 namespace App\Filament\Student\Widgets;
 
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Auth;
 
 class StudentInfoWidget extends Widget
 {
@@ -12,12 +13,13 @@ class StudentInfoWidget extends Widget
     // Atur agar widget mengambil lebar penuh (full width)
     protected int|string|array $columnSpan = 'full';
 
-    public function getData(): array
+    public function getViewData(): array
     {
-        // Anda bisa mengambil data user yang sedang login di sini
-        // $user = Auth::user();
+        $user = Auth::user();
+        $user->load(['student.classroom.major']);
+
         return [
-            // 'student' => $user->student
+            'user' => $user
         ];
     }
 }
