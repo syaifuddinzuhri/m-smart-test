@@ -163,3 +163,28 @@ if (!function_exists('moveTempToPermanent')) {
         return $content;
     }
 }
+
+
+if (!function_exists('format_exam_range')) {
+    function format_exam_range($start, $end)
+    {
+        if (!$start || !$end)
+            return '-';
+
+        // Jika hari, bulan, dan tahun sama
+        if ($start->isSameDay($end)) {
+            return [
+                'is_same_day' => true,
+                'date' => $start->translatedFormat('d F Y'),
+                'time' => $start->format('H:i') . ' — ' . $end->format('H:i T'),
+            ];
+        }
+
+        // Jika beda hari
+        return [
+            'is_same_day' => false,
+            'start' => $start->translatedFormat('d F Y, H:i'),
+            'end' => $end->translatedFormat('d F Y, H:i T'),
+        ];
+    }
+}

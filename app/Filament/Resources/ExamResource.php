@@ -184,7 +184,7 @@ class ExamResource extends Resource
                     ->label('Judul Ujian')
                     ->searchable()
                     ->description(function (Exam $record): string {
-                        $classrooms = $record->classrooms->map(fn($c) => "{$c->name} ({$c->major?->name})");
+                        $classrooms = $record->classrooms->map(fn($c) => "{$c->name} {$c->major?->code}");
 
                         if ($classrooms->count() <= 3) {
                             return $classrooms->implode(', ');
@@ -197,9 +197,45 @@ class ExamResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('start_time')
-                    ->label('Waktu')
-                    ->dateTime('d F Y H:i')
-                    ->description(fn(Exam $record): string => 'Selesai: ' . $record->end_time?->format('d F Y H:i')),
+                    ->label('Jadwal Pelaksanaan')
+                    ->icon('heroicon-m-calendar-days')
+                    ->color('gray')
+                    ->weight('medium')
+                    ->formatStateUsing(function (Exam $record) {
+                        $start = $record->start_time;
+                        $end = $record->end_time;
+
+                        if (!$start || !$end)
+                            return '-';
+
+                        if ($start->isSameDay($end)) {
+                            return $start->translatedFormat('d F Y');
+                        }
+
+                        return $start->translatedFormat('d M Y, H:i T');
+                    })
+                    ->description(function (Exam $record): \Illuminate\Support\HtmlString {
+                        $start = $record->start_time;
+                        $end = $record->end_time;
+
+                        if (!$start || !$end)
+                            return new \Illuminate\Support\HtmlString('');
+
+                        if ($start->isSameDay($end)) {
+                            return new \Illuminate\Support\HtmlString("
+                                <div class='flex items-center gap-1 text-primary-600 font-medium text-xs mt-0.5'>
+                                    <svg class='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>
+                                    <span>{$start->format('H:i')} — {$end->format('H:i T')}</span>
+                                </div>
+                            ");
+                        }
+
+                        return new \Illuminate\Support\HtmlString("
+                            <div class='text-gray-500 text-xs mt-0.5'>
+                                Selesai: <span class='text-gray-500'>{$end->translatedFormat('d M Y, H:i T')}</span>
+                            </div>
+                        ");
+                    }),
 
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Durasi')
@@ -273,11 +309,11 @@ class ExamResource extends Resource
                         ->color('info')
                         ->url(fn(Exam $record): string => static::getUrl('manage-questions', ['record' => $record])),
 
-                    // Tables\Actions\Action::make('manageTokens')
-                    //     ->label('Kelola Token')
-                    //     ->icon('heroicon-o-key')
-                    //     ->color('warning')
-                    //     ->url(fn(Exam $record): string => static::getUrl('manage-tokens', ['record' => $record])),
+                    Tables\Actions\Action::make('manageTokens')
+                        ->label('Kelola Token')
+                        ->icon('heroicon-o-key')
+                        ->color('warning')
+                        ->url(fn(Exam $record): string => static::getUrl('manage-tokens', ['record' => $record])),
 
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
@@ -329,6 +365,7 @@ class ExamResource extends Resource
             'create' => Pages\CreateExam::route('/create'),
             'edit' => Pages\EditExam::route('/{record}/edit'),
             'manage-questions' => Pages\ManageExamQuestions::route('/{record}/manage-questions'),
+            'manage-tokens' => Pages\ManageExamTokens::route('/{record}/manage-tokens'),
         ];
     }
 }

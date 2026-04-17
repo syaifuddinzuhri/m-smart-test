@@ -1,4 +1,93 @@
 <x-filament-panels::page>
+    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            {{-- Sisi Kiri: Judul & Target --}}
+            <div class="space-y-1">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-primary-50 rounded-xl">
+                        <x-heroicon-m-academic-cap class="w-6 h-6 text-primary-600" />
+                    </div>
+                    <h2 class="text-xl font-black text-gray-800 leading-tight">
+                        {{ $record->title }}
+                    </h2>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-500 font-medium ml-12">
+                    <x-heroicon-m-users class="w-3.5 h-3.5" />
+                    <span>Target:</span>
+                    <span class="text-gray-700 italic">
+                        {{ $record->classrooms->map(fn($c) => "{$c->name}-{$c->major?->code}")->implode(', ') ?: '-' }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Sisi Kanan: Jadwal & Status --}}
+            <div
+                class="flex flex-wrap items-center gap-4 md:gap-8 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-8">
+                <div>
+                    <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Jadwal
+                        Pelaksanaan</span>
+                    <div class="flex flex-col gap-1 mt-2">
+                        @if ($schedule['is_same_day'])
+                            {{-- TAMPILAN HARI SAMA --}}
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="flex items-center gap-1.5 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                    <x-heroicon-m-calendar-days class="w-3.5 h-3.5 text-gray-500" />
+                                    <span class="text-sm font-bold text-gray-700 whitespace-nowrap">
+                                        {{ $schedule['date'] }}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 text-primary-600 font-medium">
+                                    <x-heroicon-m-clock class="w-3.5 h-3.5" />
+                                    <span class="text-xs tracking-tight uppercase">
+                                        {{ $schedule['time'] }}
+                                    </span>
+                                </div>
+                            </div>
+                        @else
+                            {{-- TAMPILAN BEDA HARI --}}
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-[9px] uppercase font-black text-gray-400 leading-none mb-1">Mulai</span>
+                                    <span
+                                        class="font-bold text-gray-700 bg-gray-50 px-2 py-0.5 rounded border">{{ $schedule['start'] }}</span>
+                                </div>
+
+                                <x-heroicon-m-arrow-long-right class="w-4 h-4 text-gray-300 mt-3" />
+
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-[9px] uppercase font-black text-gray-400 leading-none mb-1">Selesai</span>
+                                    <span
+                                        class="font-bold text-gray-700 bg-gray-50 px-2 py-0.5 rounded border">{{ $schedule['end'] }}</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-center px-4 border-l border-gray-100">
+                        <span
+                            class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Durasi</span>
+                        <x-filament::badge color="info" size="sm" icon="heroicon-m-clock">
+                            {{ $record->duration }} Menit
+                        </x-filament::badge>
+                    </div>
+                    <div class="text-center px-4 border-l border-gray-100">
+                        <span
+                            class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Status</span>
+                        <x-filament::badge :color="$record->status->getColor()" size="sm">
+                            {{ $record->status->getLabel() }}
+                        </x-filament::badge>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="space-y-6">
 
         {{-- BAGIAN ATAS: FILTER & REVIEW --}}
@@ -182,7 +271,8 @@
                         <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600"><x-heroicon-m-check-circle
                                 class="w-4 h-4" /></div>
                         <div>
-                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none">Pilihan Ganda & Benar Salah</p>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none">Pilihan Ganda & Benar
+                                Salah</p>
                             <p class="text-lg font-black text-emerald-600">{{ $selectedSummary['pg'] }}</p>
                         </div>
                     </div>

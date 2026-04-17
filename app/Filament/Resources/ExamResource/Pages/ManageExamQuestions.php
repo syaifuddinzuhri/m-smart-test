@@ -32,6 +32,7 @@ class ManageExamQuestions extends Page
 
     protected static string $view = 'filament.resources.exam-resource.pages.manage-exam-questions';
 
+    protected static ?string $title = 'Kelola Soal';
     public ?array $filters = [
         'subject_id' => null,
         'question_category_id' => null,
@@ -46,10 +47,6 @@ class ManageExamQuestions extends Page
         $this->record = $this->resolveRecord($record);
     }
 
-    public function getTitle(): string
-    {
-        return "Kelola Soal: " . ($this->record->title ?? 'Ujian');
-    }
 
     public function form(Form $form): Form
     {
