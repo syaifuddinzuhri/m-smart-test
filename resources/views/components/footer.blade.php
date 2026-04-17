@@ -1,12 +1,12 @@
 <footer class="mt-auto py-6 px-4">
     <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-6">
 
-        <div class="text-sm text-gray-500 font-medium text-center md:text-left">
+        <div class="text-[12px] text-gray-500 font-medium text-center md:text-left">
             <div>
                 &copy; {{ date('Y') }} <span class="font-black text-green-600 uppercase tracking-tight">MANUSGI
                     SMART TEST</span>.
             </div>
-            <div class="text-[10px] text-gray-400 uppercase tracking-[0.15em] mt-0.5">
+            <div class="text-[6px] text-gray-400 uppercase tracking-[0.15em] mt-0.5">
                 Developed by <span class="font-bold text-gray-600">Syaifuddin Zuhri</span>
             </div>
         </div>
