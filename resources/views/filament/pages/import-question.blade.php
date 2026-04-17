@@ -14,7 +14,10 @@
         </div>
     </div>
 
-    <div>
+    {{-- Grid 2 Kolom untuk Petunjuk --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {{-- Section 1: Petunjuk Umum --}}
         <x-filament::section>
             <x-slot name="heading">
                 <div class="flex items-center gap-2 text-amber-600">
@@ -24,16 +27,113 @@
             </x-slot>
 
             <ul class="space-y-2 text-sm text-gray-600 list-disc list-inside">
-                <li>Gunakan <strong>Template Resmi</strong> yang dapat diunduh melalui tombol di pojok kanan atas.</li>
-                <li>Untuk tipe Pilihan Ganda, pastikan opsi jawaban tidak kosong jika kunci jawaban merujuk ke opsi
-                    tersebut.</li>
-                <li>Sistem akan melakukan validasi otomatis, jika ada data yang tidak valid, proses import akan
-                    dihentikan.</li>
-                <li class="text-danger-600 font-medium italic">
-                    <strong>Sistem Atomicity:</strong> Jika terdapat satu saja baris yang gagal, maka seluruh data dalam
-                    file tersebut akan <strong>gagal di-import</strong> (Rollback) untuk menjaga integritas data.
-                </li>
+                <li>Gunakan <strong>Template Resmi</strong> dari tombol pojok kanan atas.</li>
+                <li>Sistem menggunakan <strong>Atomicity</strong>: 1 baris salah, semua gagal import (Rollback).</li>
+                <li>Pastikan file <code>.docx</code> tidak dalam keadaan terproteksi atau terkunci.</li>
+                <li>Jika menggunakan lampiran, bungkus file soal dan dokumen dalam satu <b>ZIP</b>.</li>
+                <li>Nama file <b>wajib</b> mengikuti nomor urut soal (Contoh: <code
+                        class="bg-gray-100 px-1">soal-1.png</code>).</li>
+                <li>Format didukung: <b>PNG, JPG, GIF, MP3, MP4, WAV, WEBM</b>.</li>
+                <li>Ukuran maksimal tiap file lampiran adalah <b>3 MB</b>.</li>
+                <li>Satu soal hanya bisa untuk 1 lampiran</b>.</li>
             </ul>
+
+            <div class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <p class="font-bold text-xs uppercase mb-1">Contoh Isi ZIP:</p>
+                <code class="text-xs block whitespace-pre-line">
+                    📂 soal.zip
+                    ├── soal.docx / soal.xlsx (Nama file harus ini)
+                    ├── soal-1.png (Gambar)
+                    ├── soal-2.mp3 (Audio Listening)
+                    └── soal-3.mp4 (Video Pendek)
+                </code>
+            </div>
+        </x-filament::section>
+
+        {{-- Section 2: Petunjuk Matematika & Arab (Baru) --}}
+        {{-- Section 2: Petunjuk Matematika & Arab (Optimasi Full Word) --}}
+        <x-filament::section>
+            <x-slot name="heading">
+                <div class="flex items-center gap-2 text-primary-600">
+                    <x-heroicon-m-document-text class="w-5 h-5" />
+                    <span>Panduan Format Native Word</span>
+                </div>
+            </x-slot>
+
+            <div class="space-y-4">
+                {{-- Alert Wajib Word --}}
+                <div class="p-3 bg-amber-50 border-l-4 border-amber-400 text-amber-800 text-xs">
+                    <div class="flex items-center gap-2 font-bold mb-1">
+                        <x-heroicon-m-information-circle class="w-4 h-4" />
+                        <span>Wajib Menggunakan Microsoft Word</span>
+                    </div>
+                    Untuk hasil terbaik pada rumus matematika dan teks Arab, dilarang mengetik simbol manual. Gunakan
+                    fitur bawaan MS Word agar sistem dapat mengonversi data secara akurat.
+                </div>
+
+                <div class="space-y-3">
+                    {{-- Instruksi Matematika --}}
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <p class="text-[10px] font-bold text-primary-600 uppercase mb-2">1. Matematika (Fitur Equation)
+                        </p>
+                        <ul class="text-xs text-gray-600 space-y-2">
+                            <li class="flex items-start gap-2">
+                                <span class="text-primary-500 font-bold">•</span>
+                                <span>Klik menu <strong>Insert > Equation</strong> untuk setiap rumus.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-primary-500 font-bold">•</span>
+                                <span>Hindari mengetik pangkat (^) atau pecahan (/) secara manual di teks biasa.</span>
+                            </li>
+                        </ul>
+                        <div
+                            class="mt-2 p-2 bg-white rounded border flex flex-col gap-4 border-gray-200 font-mono text-[10px] text-center italic">
+                            <div>
+                                Contoh: <span class="text-blue-600"> [Objek Equation] </span> &rarr; $\frac{-b \pm
+                                \sqrt{D}}{2a}$
+                            </div>
+                            <div class="flex justify-center">
+                                Hasil:
+                                <div class="text-[16px]" x-data="{}" x-init="renderMathInElement($el, {
+                                    delimiters: [
+                                        { left: '$$', right: '$$', display: true },
+                                        { left: '$', right: '$', display: false },
+                                        { left: '\\(', right: '\\)', display: false },
+                                        { left: '\\[', right: '\\]', display: true }
+                                    ],
+                                    throwOnError: false
+                                })">$\frac{-b \pm
+                                    \sqrt{D}}{2a}$</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Instruksi Arab --}}
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <p class="text-[10px] font-bold text-emerald-600 uppercase mb-2">2. Teks Arab (Native Font)</p>
+                        <ul class="text-xs text-gray-600 space-y-2">
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-500 font-bold">•</span>
+                                <span>Gunakan keyboard Arabic dan font standar (Amiri/Traditional Arabic).</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-500 font-bold">•</span>
+                                <span>Sistem otomatis mengatur posisi kanan-ke-kiri (RTL) saat soal ditampilkan.</span>
+                            </li>
+                        </ul>
+                        <div class="mt-2 p-2 bg-white rounded border border-gray-200 text-right font-arabic"
+                            dir="rtl">
+                            <span class="text-emerald-600">مَنْ جَدَّ وَجَدَ</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer Note --}}
+                <p class="text-[10px] text-gray-400 italic">
+                    * Sistem akan mengonversi objek Word di atas menjadi format digital yang mendukung tampilan mobile &
+                    desktop secara otomatis.
+                </p>
+            </div>
         </x-filament::section>
     </div>
 

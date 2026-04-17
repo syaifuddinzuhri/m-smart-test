@@ -103,22 +103,7 @@ class ImportQuestion extends Page
         <ul class="list-disc ml-4 space-y-1">
             <li>Mendukung file <b>.xlsx</b>, <b>.docx</b>, atau <b>.zip</b>.</li>
             <li>Ukuran maksimal file upload adalah <b>20 MB</b>.</li>
-            <li>Jika menggunakan gambar, bungkus file soal dan dokumen dalam satu <b>ZIP</b>.</li>
-            <li>Nama file <b>wajib</b> mengikuti nomor urut soal (Contoh: <code class="bg-gray-100 px-1">soal-1.png</code>).</li>
-            <li>Format didukung: <b>PNG, JPG, GIF, MP3, MP4, WAV, WEBM</b>.</li>
-            <li>Ukuran maksimal tiap file lampiran adalah <b>3 MB</b>.</li>
-            <li>Satu soal hanya bisa untuk 1 lampiran</b>.</li>
         </ul>
-        <div class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <p class="font-bold text-xs uppercase mb-1">Contoh Isi ZIP:</p>
-            <code class="text-xs block whitespace-pre">
-📂 soal.zip
- ├── soal.docx / soal.xlsx (Nama file harus ini)
- ├── soal-1.png  (Gambar)
- ├── soal-2.mp3  (Audio Listening)
- └── soal-3.mp4  (Video Pendek)
-            </code>
-        </div>
     </div>
 ')),
                         ])->columnSpan(2),
