@@ -18,9 +18,9 @@ class QuestionCategoryResource extends Resource
     protected static ?string $model = QuestionCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
-    protected static ?string $navigationLabel = 'Topik Materi';
-    protected static ?string $modelLabel = 'Topik Materi';
-    protected static ?string $pluralModelLabel = 'Daftar Topik Materi';
+    protected static ?string $navigationLabel = 'Topik';
+    protected static ?string $modelLabel = 'Topik';
+    protected static ?string $pluralModelLabel = 'Daftar Topik';
     protected static ?string $navigationGroup = 'Manajemen Soal';
     protected static ?int $navigationSort = 1;
 

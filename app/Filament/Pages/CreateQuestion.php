@@ -57,7 +57,7 @@ class CreateQuestion extends Page
                             ->required(),
 
                         Select::make('question_category_id')
-                            ->label('Topik Materi')
+                            ->label('Topik')
                             ->relationship('questionCategory', 'name')
                             ->searchable()
                             ->preload()
