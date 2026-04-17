@@ -29,6 +29,8 @@ class ImportStudent extends Page
 
     public ?array $data = [];
 
+    public int $successCount = 0;
+
     public ?array $importData = [];
 
     public int $currentPage = 1;
@@ -71,6 +73,7 @@ class ImportStudent extends Page
             $processedData = [];
             $tempUsernames = []; // Untuk deteksi duplikat sesama isi Excel
             $tempNisns = [];
+            $validCount = 0;
 
             foreach ($cleanData as $row) {
                 if (empty($row[0]))
@@ -108,6 +111,10 @@ class ImportStudent extends Page
                     $errors[] = "Kode kelas tidak ditemukan";
                 }
 
+                if (empty($errors)) {
+                    $validCount++;
+                }
+
                 // Simpan data dalam bentuk asosiatif agar lebih mudah dibaca di Blade
                 $processedData[] = [
                     'name' => $row[0],
@@ -126,6 +133,7 @@ class ImportStudent extends Page
                 return;
             }
 
+            $this->successCount = $validCount;
             $this->importData = $processedData;
             $this->currentPage = 1;
 
@@ -165,6 +173,7 @@ class ImportStudent extends Page
         $this->data = [];
         $this->form->fill();
 
+        $this->successCount = 0;
         $this->currentPage = 1;
     }
 

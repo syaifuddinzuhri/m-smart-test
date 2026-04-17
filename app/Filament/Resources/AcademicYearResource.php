@@ -14,6 +14,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 
 class AcademicYearResource extends Resource
 {
@@ -37,6 +38,16 @@ class AcademicYearResource extends Resource
                         TextInput::make('name')
                             ->label('Nama Tahun Ajaran')
                             ->placeholder('Contoh: 2024/2025')
+                            ->unique(
+                                ignoreRecord: true,
+                                modifyRuleUsing: function (Unique $rule, $get) {
+                                    return $rule->where('name', $get('name'));
+                                }
+                            )
+                            ->live()
+                            ->validationMessages([
+                                'unique' => 'Nama ini sudah ada.',
+                            ])
                             ->required(),
                         Toggle::make('is_active')
                             ->label('Status Aktif')

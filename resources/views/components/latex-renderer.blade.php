@@ -1,128 +1,90 @@
-{{-- <script>
-    function applyKatex(target = document.body) {
-        // Cari semua elemen soal di dalam target
-        const containers = target.querySelectorAll('.soal-content');
-
-        containers.forEach((el) => {
-            // Cek apakah sudah pernah dirender untuk menghindari double render
-            if (el.classList.contains('katex-rendered')) return;
-
-            try {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
-                    ],
-                    throwOnError: false
-                });
-                // Tandai elemen agar tidak dirender ulang
-                el.classList.add('katex-rendered');
-            } catch (e) {
-                console.error("KaTeX error:", e);
-            }
-        });
-    }
-
-    // Jalankan saat halaman siap
-    document.addEventListener('DOMContentLoaded', () => {
-        applyKatex();
-
-        // Gunakan MutationObserver untuk memantau kapan soal muncul (setelah filter)
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.addedNodes.length) {
-                    applyKatex();
-                }
-            });
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    });
-
-    // Integrasi khusus Livewire 3
-    document.addEventListener('livewire:initialized', () => {
-        Livewire.hook('request.cycle.finished', () => {
-            setTimeout(() => { applyKatex(); }, 50);
-        });
-    });
-</script> --}}
-
 {{-- resources/views/components/latex-renderer.blade.php --}}
 <script>
     (function() {
-        /**
-         * Fungsi utama untuk merender KaTeX pada elemen .soal-content
-         */
-        const renderSoalLatex = () => {
-            if (typeof renderMathInElement !== 'function') return;
+        const CONFIG = {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        };
 
-            // Cari elemen yang BELUM ditandai 'katex-done'
-            const elements = document.querySelectorAll('.soal-content:not(.katex-done)');
+        const doRender = () => {
+            if (typeof renderMathInElement !== 'function') {
+                console.warn("KaTeX: renderMathInElement belum dimuat.");
+                return;
+            }
+
+            // Cari elemen soal yang belum dirender
+            const elements = document.querySelectorAll('.soal-content:not([data-render-complete])');
 
             elements.forEach((el) => {
-                try {
-                    renderMathInElement(el, {
-                        delimiters: [{
-                                left: '$$',
-                                right: '$$',
-                                display: true
-                            },
-                            {
-                                left: '$',
-                                right: '$',
-                                display: false
-                            },
-                            {
-                                left: '\\(',
-                                right: '\\)',
-                                display: false
-                            },
-                            {
-                                left: '\\[',
-                                right: '\\]',
-                                display: true
-                            }
-                        ],
-                        throwOnError: false
-                    });
-                    // Tandai agar tidak diproses ulang oleh observer
-                    el.classList.add('katex-done');
-                } catch (e) {
-                    console.warn("KaTeX render error:", e);
+                const html = el.innerHTML;
+                // Cek apakah mengandung simbol matematika
+                if (html.includes('$') || html.includes('\\')) {
+                    try {
+                        renderMathInElement(el, CONFIG);
+                        el.setAttribute('data-render-complete', 'true');
+                    } catch (e) {
+                        console.error("KaTeX Render Error:", e);
+                    }
                 }
             });
         };
 
-        // 1. Jalankan saat inisialisasi pertama (Non-SPA load)
-        document.addEventListener('livewire:initialized', () => {
-            renderSoalLatex();
+        // Debounce agar tidak berat saat hapus massal
+        let timeout;
+        const triggerRender = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(doRender, 50);
+        };
 
-            // 2. Hook untuk menangani navigasi SPA & Update Komponen (Hapus, Filter, dll)
-            // morph.updated mencakup perpindahan halaman via wire:navigate (SPA)
-            Livewire.hook('morph.updated', ({
-                el,
-                component
-            }) => {
-                renderSoalLatex();
+        // 1. Lifecycle Events
+        document.addEventListener('DOMContentLoaded', triggerRender);
+        document.addEventListener('livewire:navigated', triggerRender);
+
+        // 2. Livewire Hooks (Sangat penting untuk Filter & Delete)
+        document.addEventListener('livewire:initialized', () => {
+            // Setelah aksi apapun (Hapus, Bulk Delete, Ganti Tab, Filter)
+            Livewire.hook('request.cycle.finished', () => {
+                triggerRender();
+            });
+
+            // Jika elemen lama diperbarui kontennya (Morphing)
+            Livewire.hook('morph.updated', ({ el }) => {
+                if (el instanceof HTMLElement && el.classList.contains('soal-content')) {
+                    el.removeAttribute('data-render-complete');
+                    triggerRender();
+                }
             });
         });
 
-        // 3. Fallback: Gunakan MutationObserver untuk perubahan DOM di luar Livewire
-        // atau jika ada konten yang dimuat sangat lambat
+        // 3. Observer untuk elemen yang muncul dinamis (Modal)
         const observer = new MutationObserver((mutations) => {
-            // Debounce kecil agar tidak terlalu sering memicu querySelector
-            clearTimeout(window.katexTimeout);
-            window.katexTimeout = setTimeout(renderSoalLatex, 50);
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length > 0) {
+                    triggerRender();
+                    break;
+                }
+            }
         });
 
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        observer.observe(document.body, { childList: true, subtree: true });
     })();
 </script>
+
+<style>
+    .soal-content {
+        unicode-bidi: plaintext;
+        visibility: visible !important;
+    }
+    .katex-display {
+        margin: 1.2em 0 !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.2em 0;
+        text-align: center;
+    }
+</style>

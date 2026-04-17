@@ -168,17 +168,23 @@
 
                     <div class="mt-6 pt-6 border-t dark:border-gray-700 flex items-center justify-end gap-3">
                         <div class="flex items-center justify-end gap-3">
-                            {{-- Tombol di Footer: Muncul hanya saat preview ada --}}
-                            <x-filament::button wire:click="resetImport" color="gray" variant="outline"
-                                icon="heroicon-m-x-mark">
-                                Batalkan & Hapus File
-                            </x-filament::button>
 
-                            <x-filament::button wire:click="saveImport" color="success"
-                                icon="heroicon-m-arrow-down-tray" wire:loading.attr="disabled" wire:target="saveImport">
-                                <span wire:loading.remove wire:target="saveImport">Simpan Semua Data</span>
-                                <span wire:loading wire:target="saveImport">Menyimpan...</span>
-                            </x-filament::button>
+                            @php $totalData = count($importData); @endphp
+
+                            @if ($successCount === $totalData)
+                                <x-filament::button wire:click="saveImport" color="success"
+                                    icon="heroicon-m-arrow-down-tray" wire:loading.attr="disabled"
+                                    wire:target="saveImport">
+                                    <span wire:loading.remove wire:target="saveImport">Simpan Semua Data</span>
+                                    <span wire:loading wire:target="saveImport">Menyimpan...</span>
+                                </x-filament::button>
+                            @else
+                                <x-filament::button wire:click="resetImport" color="gray" variant="outline"
+                                    icon="heroicon-m-x-mark">
+                                    Reset & Upload Ulang
+                                </x-filament::button>
+                            @endif
+
                         </div>
                     </div>
                 </x-filament::section>

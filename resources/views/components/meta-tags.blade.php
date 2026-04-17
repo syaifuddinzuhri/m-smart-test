@@ -5,7 +5,6 @@
     content="smart test, ma nu sunan giri, ma nu sunan giri prigen, ujian online, CBT, computer based test, sistem ujian sekolah, aplikasi ujian online, ujian berbasis komputer, e-learning, ujian digital, CBT madrasah, ujian MA NU Sunan Giri Prigen">
 
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-Frame-Options" content="DENY">
 
 <meta name="google" content="notranslate">
 

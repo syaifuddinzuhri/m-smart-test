@@ -52,7 +52,7 @@ class ClassroomResource extends Resource
                             ->label('Nama Kelas')
                             ->placeholder('Contoh: XI')
                             ->required()
-                            ->live(onBlur: true)
+                            ->live(debounce: 500)
                             ->afterStateUpdated(fn(Get $get, Set $set) => self::updateCode($get, $set)),
 
                         TextInput::make('code')
@@ -60,7 +60,6 @@ class ClassroomResource extends Resource
                             ->placeholder('Otomatis: {Nama}-{Kode Jurusan}')
                             ->required()
                             ->readOnly()
-                            ->disabled()
                             ->dehydrated()
                             ->unique(ignoreRecord: true)
                             ->helperText('Format otomatis: Nama Kelas - Kode Jurusan'),

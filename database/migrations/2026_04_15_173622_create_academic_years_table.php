@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('academic_years', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name')->index();
+            $table->string('name')->index()->unique();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
         });
