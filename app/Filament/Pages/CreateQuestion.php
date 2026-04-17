@@ -18,6 +18,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class CreateQuestion extends Page
@@ -240,6 +241,15 @@ class CreateQuestion extends Page
                         // SHORT ANSWER
                         TextInput::make('correct_answer_text')
                             ->label('Kunci Jawaban')
+                            ->helperText(new HtmlString('
+                            <ul class="list-disc list-inside text-xs space-y-1 mt-1 text-gray-500">
+                                <li>Sistem akan mencocokkan jawaban siswa secara <b>otomatis</b>.</li>
+                                <li>Gunakan tanda pipa ( <b>|</b> ) untuk memisahkan variasi jawaban benar.</li>
+                                <li>Besar/kecil huruf (Kapitalisasi) akan <b>diabaikan</b> oleh sistem.</li>
+                                <li>Pastikan ejaan kata tepat untuk menghindari kesalahan penilaian.</li>
+                                <li>Anda tetap dapat mengubah status penilaian secara manual setelah ujian selesai.</li>
+                            </ul>
+                        '))
                             ->visible(fn($get) => $get('question_type') === 'short_answer'),
 
                     ])

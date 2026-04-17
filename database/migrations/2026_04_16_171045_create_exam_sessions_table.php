@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\ExamStatus;
+use App\Enums\ExamSessionStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->unsignedInteger('question_seed')->nullable();
             $table->unsignedInteger('option_seed')->nullable();
 
-            $table->enum('status', ExamStatus::values())->default(ExamStatus::PENDING->value);
+            $table->enum('status', ExamSessionStatus::values())->default(ExamSessionStatus::PENDING->value);
             $table->dateTime('started_at')->nullable();
             $table->dateTime('finished_at')->nullable();
             $table->integer('remaining_duration')->nullable(); // Dalam detik

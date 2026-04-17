@@ -6,36 +6,44 @@ use ArchTech\Enums\Options;
 use ArchTech\Enums\Values;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
+use Filament\Support\Contracts\HasIcon;
 
-enum ExamStatus: string implements HasLabel, HasColor
+enum ExamStatus: string implements HasLabel, HasColor, HasIcon
 {
     use Options, Values;
 
-    case PENDING = 'pending'; // Ujian belum dibuka jadwalnya
-    case NOT_STARTED = 'not_started'; // Ujian sudah buka, tapi siswa belum mulai
-    case ONGOING = 'ongoing'; // Siswa sedang mengerjakan
-    case PAUSE = 'pause'; // Pause
-    case COMPLETED = 'completed'; // Siswa sudah selesai
+    case DRAFT = 'draft';
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+    case CLOSED = 'closed';
 
     public function getLabel(): ?string
     {
         return match ($this) {
-            self::PENDING => 'Menunggu Jadwal',
-            self::NOT_STARTED => 'Belum Dikerjakan',
-            self::ONGOING => 'Sedang Berlangsung',
-            self::PAUSE => 'Terjeda',
-            self::COMPLETED => 'Sudah Selesai',
+            self::DRAFT => 'Draft (Persiapan)',
+            self::ACTIVE => 'Aktif / Berlangsung',
+            self::INACTIVE => 'Non-Aktif',
+            self::CLOSED => 'Sudah Berakhir',
         };
     }
 
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::PENDING => 'gray',
-            self::NOT_STARTED => 'danger',
-            self::ONGOING => 'warning',
-            self::PAUSE => 'info',
-            self::COMPLETED => 'success',
+            self::DRAFT => 'gray',
+            self::ACTIVE => 'success',
+            self::INACTIVE => 'danger',
+            self::CLOSED => 'info',
+        };
+    }
+
+    public function getIcon(): ?string
+    {
+        return match ($this) {
+            self::DRAFT => 'heroicon-m-pencil-square',
+            self::ACTIVE => 'heroicon-m-play-circle',
+            self::INACTIVE => 'heroicon-m-no-symbol',
+            self::CLOSED => 'heroicon-m-lock-closed',
         };
     }
 }

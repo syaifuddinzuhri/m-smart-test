@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ExamStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +15,9 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('exam_category_id')->constrained('exam_categories')->restrictOnDelete();
             $table->foreignUuid('subject_id')->constrained('subjects')->restrictOnDelete();
+
+            $table->enum('status', ExamStatus::values())->default(ExamStatus::DRAFT->value);
+
             $table->string('title')->nullable();
             $table->dateTime('start_time');
             $table->dateTime('end_time');

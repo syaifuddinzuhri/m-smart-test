@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ExamStatus;
+use App\Enums\ExamSessionStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +15,7 @@ class ExamSession extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'status' => ExamStatus::class,
+        'status' => ExamSessionStatus::class,
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
         'last_violation_at' => 'datetime',

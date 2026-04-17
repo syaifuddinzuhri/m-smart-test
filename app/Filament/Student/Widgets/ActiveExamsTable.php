@@ -2,7 +2,7 @@
 
 namespace App\Filament\Student\Widgets;
 
-use App\Enums\ExamStatus;
+use App\Enums\ExamSessionStatus;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -47,10 +47,10 @@ class ActiveExamsTable extends BaseWidget
                             ->getStateUsing(function ($record) {
                                 $index = abs(crc32($record->id)) % 4;
                                 return match ($index) {
-                                    0 => ExamStatus::PENDING,
-                                    1 => ExamStatus::NOT_STARTED,
-                                    2 => ExamStatus::ONGOING,
-                                    3 => ExamStatus::COMPLETED,
+                                    0 => ExamSessionStatus::PENDING,
+                                    1 => ExamSessionStatus::NOT_STARTED,
+                                    2 => ExamSessionStatus::ONGOING,
+                                    3 => ExamSessionStatus::COMPLETED,
                                 };
                             }),
                     ])->extraAttributes(['class' => 'mt-3 mb-2']),
