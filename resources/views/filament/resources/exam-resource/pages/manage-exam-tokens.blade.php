@@ -118,15 +118,12 @@
         </div>
 
         {{-- KOLOM KANAN: LIST TOKEN --}}
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2" wire:poll.30s.keep-alive>
             <x-filament::section icon="heroicon-o-list-bullet" icon-color="success">
                 <x-slot name="heading">Daftar Token Ujian</x-slot>
 
                 <x-slot name="headerEnd">
                     <div class="flex items-center gap-3">
-                        <x-filament::icon-button icon="heroicon-m-arrow-path" color="gray" tooltip="Segarkan Data"
-                            wire:click="$refresh" wire:loading.class="animate-spin" />
-                        {{-- Filter Tipe --}}
                         <div class="flex bg-gray-100 p-1 rounded-lg">
                             <button wire:click="setFilter(null)"
                                 class="px-3 py-1 text-[10px] font-bold uppercase rounded-md transition {{ !$filterType ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500' }}">
@@ -148,6 +145,17 @@
                         </x-filament::button>
                     </div>
                 </x-slot>
+
+                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 mb-4">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-success-500"></span>
+                    </span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tight">
+                        Realtime Auto-Sync <span class="text-gray-400 font-medium">(per 30 detik)</span>
+                    </span>
+                </div>
 
                 <div class="overflow-x-auto border border-gray-100 rounded-xl">
                     <table class="w-full text-sm text-left">
