@@ -101,6 +101,7 @@
                                     <th class="px-4 py-3 text-center">No</th>
                                     <th class="px-4 py-3">Nama Lengkap</th>
                                     <th class="px-4 py-3">Username & NISN</th>
+                                    <th class="px-4 py-3">Jenis Kelamin</th>
                                     <th class="px-4 py-3">Status / Keterangan</th>
                                 </tr>
                             </thead>
@@ -122,6 +123,10 @@
                                             <div class="text-xs"><span>{{ $item['username'] }}</span>
                                             </div>
                                             <div class="text-xs"><span>{{ $item['nisn'] }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 space-y-1">
+                                            <div class="text-xs"><span>{{ $item['gender_label'] }}</span>
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">

@@ -83,6 +83,7 @@ class ImportStudent extends Page
                 $username = normalizeUsername($row[1] ?? '');
                 $nisn = $row[3] ?? '';
                 $classCode = $row[4] ?? '';
+                $genderLabel = $row[7] ?? '';
 
                 // 1. Validasi Username (DB & Internal Excel)
                 if (empty($username)) {
@@ -111,6 +112,21 @@ class ImportStudent extends Page
                     $errors[] = "Kode kelas tidak ditemukan";
                 }
 
+                $genderValue = null;
+                if (empty($genderLabel)) {
+                    $errors[] = "Jenis kelamin kosong";
+                } else {
+                    $genderValue = match (trim($genderLabel)) {
+                        'Laki-laki' => \App\Enums\GenderType::MALE->value,
+                        'Perempuan' => \App\Enums\GenderType::FEMALE->value,
+                        default => null,
+                    };
+
+                    if (!$genderValue) {
+                        $errors[] = "Jenis kelamin tidak valid (Gunakan dropdown)";
+                    }
+                }
+
                 if (empty($errors)) {
                     $validCount++;
                 }
@@ -124,6 +140,8 @@ class ImportStudent extends Page
                     'class_code' => $classCode,
                     'pob' => $row[5],
                     'dob' => $row[6],
+                    'gender' => $genderValue,
+                    'gender_label' => $genderLabel,
                     'errors' => $errors, // Simpan array error di sini
                 ];
             }
@@ -210,6 +228,7 @@ class ImportStudent extends Page
                     'nisn' => $item['nisn'],
                     'pob' => $item['pob'],
                     'dob' => $item['dob'],
+                    'gender' => $item['gender'],
                 ]);
 
                 $successCount++;
