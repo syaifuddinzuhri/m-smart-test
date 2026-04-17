@@ -19,20 +19,20 @@ class ClearExpiredExamTokens extends Command
      *
      * @var string
      */
-    protected $description = 'Membersihkan token ujian yang sudah kadaluarsa atau sudah digunakan (dengan buffer 5 menit)';
+    protected $description = 'Membersihkan token ujian yang sudah kadaluarsa atau sudah digunakan (dengan buffer 1 menit)';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $bufferMinutes = 5;
+        $bufferMinutes = 1;
         $threshold = now()->subMinutes($bufferMinutes);
 
         /**
          * Logika Penghapusan:
-         * 1. Hapus jika expired_at sudah lewat dari 5 menit yang lalu.
-         * 2. Hapus jika token single_use dan used_at sudah lewat dari 5 menit yang lalu.
+         * 1. Hapus jika expired_at sudah lewat dari 1 menit yang lalu.
+         * 2. Hapus jika token single_use dan used_at sudah lewat dari 1 menit yang lalu.
          */
         $deletedCount = ExamToken::query()
             ->where(function ($query) use ($threshold) {
