@@ -131,9 +131,14 @@ class ImportQuestion extends Page
                         ->options([
                             'excel' => 'Microsoft Excel (.xlsx)',
                             'word' => 'Microsoft Word (.docx)',
-                        ])->default('excel')->required(),
+                        ])->default('excel')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
                     Select::make('template_type')
                         ->label('Pilih Tipe Template')
+                        ->searchable()
+                        ->preload()
                         ->options([
                             'pg' => 'Pilihan Ganda (Single & Multiple)',
                             'tf' => 'True / False',
