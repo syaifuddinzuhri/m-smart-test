@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Classroom;
 use App\Enums\UserRole;
-use App\Exports\StudentTemplateExport;
+use App\Exports\StudentExcelTemplateExport;
 use Filament\Pages\Page;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
@@ -245,7 +245,7 @@ class ImportStudent extends Page
 
     public function downloadTemplate()
     {
-        return Excel::download(new StudentTemplateExport, 'template_peserta_' . now()->format('Ymd_His') . '.xlsx');
+        return Excel::download(new StudentExcelTemplateExport, 'template_peserta_' . now()->format('Ymd_His') . '.xlsx');
     }
 
     protected function getHeaderActions(): array

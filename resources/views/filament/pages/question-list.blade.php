@@ -12,7 +12,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <x-filament::card class="text-center">
             <div class="text-2xl font-bold text-green-600">{{ $summary['pg'] }}</div>
-            <div class="text-sm text-gray-500">Pilihan Ganda</div>
+            <div class="text-sm text-gray-500">Pilihan Ganda & Benar Salah</div>
         </x-filament::card>
 
         <x-filament::card class="text-center">
@@ -46,7 +46,7 @@
                 <div class="flex gap-2">
                     <button @click="tab='pg'" :class="tab === 'pg' ? 'bg-primary-600 text-white' : 'bg-gray-100'"
                         class="px-4 py-2 rounded-xl text-sm font-medium">
-                        Pilihan Ganda
+                        Pilihan Ganda & Benar Salah
                     </button>
 
                     <button @click="tab='short'" :class="tab === 'short' ? 'bg-blue-600 text-white' : 'bg-gray-100'"
@@ -116,8 +116,8 @@
                         <div class="p-4">
                             {{-- KONTEN PERTANYAAN: Ukuran text disesuaikan --}}
                             <div class="prose max-w-none mt-6">
-                                <div class="prose max-w-none mt-6 text-gray-800 text-base font-medium leading-snug soal-content"
-                                    >
+                                <div
+                                    class="prose max-w-none mt-6 text-gray-800 text-base font-medium leading-snug soal-content">
                                     {!! $q->question_text !!}
                                 </div>
                             </div>
@@ -149,7 +149,7 @@
                                                 'prose max-w-none text-[13px] soal-content',
                                                 'font-semibold text-emerald-900' => $opt->is_correct,
                                                 'text-gray-600' => !$opt->is_correct,
-                                            ]) >
+                                            ])>
                                                 {!! $opt->text !!}
                                             </div>
                                         </div>
@@ -226,7 +226,7 @@
                             {{-- PERTANYAAN --}}
                             <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug soal-content"
-                                    x-data="{}" >
+                                    x-data="{}">
                                     {!! $q->question_text !!}
                                 </div>
                             </div>
@@ -302,7 +302,7 @@ ESSAY
                             {{-- PERTANYAAN --}}
                             <div class="prose max-w-none mt-6">
                                 <div class="text-gray-800 text-base font-medium leading-snug soal-content"
-                                    x-data="{}" >
+                                    x-data="{}">
                                     {!! $q->question_text !!}
                                 </div>
                             </div>

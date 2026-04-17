@@ -5,15 +5,14 @@ namespace App\Imports;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\QuestionOption;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\Element\Table;
-use PhpOffice\PhpWord\Element\Cell;
 use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\ToCollection;
 
-class QuestionPgWordImport2
+class QuestionChoiceExcelImport implements ToCollection
 {
     protected $subjectId;
     protected $categoryId;
@@ -36,72 +35,80 @@ class QuestionPgWordImport2
             return;
 
         $files = File::allFiles($this->basePath);
-
         foreach ($files as $file) {
             $this->fileMap[strtolower($file->getFilename())] = $file->getRealPath();
         }
     }
 
-    public function import($filePath)
+    public function collection(Collection $rows)
     {
-        $phpWord = IOFactory::load($filePath);
-        $table = $this->findTable($phpWord);
-
-        if (!$table)
-            throw new Exception("Tabel data tidak ditemukan.");
-
-        $rows = $table->getRows();
-        $dataRows = array_slice($rows, 1);
-        $chunks = array_chunk($dataRows, 5);
+        // Data dimulai dari baris ke-8 (index 7)
+        $dataRows = $rows->slice(7);
+        $chunks = $dataRows->chunk(5);
 
         $maxOptionsFound = 0;
         $preparedData = [];
+        $isSequenceBroken = false;
 
-        // --- STAGE 1: VALIDASI & PREPARASI ---
+        // --- STAGE 1: SCANNING & VALIDASI ---
         foreach ($chunks as $index => $chunk) {
-            $visualRow = ($index * 5) + 2;
             $nomorSoal = $index + 1;
+            $excelRow = ($index * 5) + 8;
 
-            $firstRowCells = $chunk[0]->getCells();
-            $questionText = $this->getCellValue($firstRowCells[1]);
+            $firstRow = $chunk->first();
+            $questionText = $firstRow[1] ?? null;
 
-            if (empty($questionText))
+            if (empty(trim($questionText))) {
+                $isSequenceBroken = true;
                 continue;
+            }
+
+            if ($isSequenceBroken && !empty($questionText)) {
+                $this->addError(
+                    $excelRow,
+                    $nomorSoal,
+                    $questionText,
+                    "Nomor soal melompat. Nomor soal sebelumnya kosong, harap pastikan soal berurutan tanpa ada nomor yang dilewati."
+                );
+            }
 
             $optionsData = [];
             $correctCount = 0;
 
             foreach ($chunk as $row) {
-                $cells = $row->getCells();
-                $optionText = $this->getCellValue($cells[2] ?? null);
-                $isCorrect = trim($this->getCellValue($cells[3] ?? null)) === '1';
+                $optionText = $row[2] ?? null;
+                $isCorrect = (int) ($row[3] ?? 0) === 1;
 
-                if (!empty($optionText)) {
-                    $optionsData[] = ['text' => $optionText, 'is_correct' => $isCorrect];
+                if (!empty(trim($optionText))) {
+                    $optionsData[] = [
+                        'text' => $optionText,
+                        'is_correct' => $isCorrect,
+                    ];
                     if ($isCorrect)
                         $correctCount++;
                 }
             }
 
-            // Update jumlah opsi maksimal untuk validasi selaras
+            // Hitung max opsi untuk validasi keselarasan nanti
             $maxOptionsFound = max($maxOptionsFound, count($optionsData));
 
-            // Cek File Multimedia & Ukurannya
+            // Cek Attachment (Gambar/Audio/Video)
             $foundFile = $this->checkAttachment($nomorSoal);
 
+            // Validasi awal
             $error = null;
             if ($correctCount === 0) {
                 $error = "Belum ada kunci jawaban (angka 1).";
-            } elseif ($foundFile && $foundFile['size'] > (3 * 1024 * 1024)) {
-                $error = "File {$foundFile['name']} melebihi batas maksimal 3MB.";
+            } elseif ($foundFile && $foundFile['size'] > (20 * 1024 * 1024)) {
+                $error = "File {$foundFile['name']} melebihi batas maksimal 20MB.";
             }
 
             if ($error) {
-                $this->addError($visualRow, $nomorSoal, $questionText, $error);
+                $this->addError($excelRow, $nomorSoal, $questionText, $error);
             }
 
             $preparedData[] = [
-                'visual_row' => $visualRow,
+                'excel_row' => $excelRow,
                 'no' => $nomorSoal,
                 'text' => $questionText,
                 'options' => $optionsData,
@@ -110,11 +117,11 @@ class QuestionPgWordImport2
             ];
         }
 
-        // Validasi keselarasan jumlah opsi
+        // Validasi keselarasan jumlah opsi (min 3, max 5)
         $requiredOptions = max(3, min(5, $maxOptionsFound));
-        foreach ($preparedData as $key => $item) {
+        foreach ($preparedData as $item) {
             if (count($item['options']) !== $requiredOptions) {
-                $this->addError($item['visual_row'], $item['no'], $item['text'], "Jumlah opsi wajib {$requiredOptions}.");
+                $this->addError($item['excel_row'], $item['no'], $item['text'], "Jumlah opsi wajib {$requiredOptions}.");
             }
         }
 
@@ -123,7 +130,11 @@ class QuestionPgWordImport2
             throw new Exception("Validasi Gagal");
         }
 
-        // --- STAGE 2: PROSES INSERT ---
+        if (empty($preparedData)) {
+            throw new Exception("Gagal import data tidak terbaca");
+        }
+
+        // --- STAGE 2: PROSES INSERT (ATOMIC) ---
         foreach ($preparedData as $item) {
             try {
                 $type = ($item['correct_count'] > 1)
@@ -137,18 +148,18 @@ class QuestionPgWordImport2
                     'question_type' => $type,
                 ]);
 
-                // Simpan Opsi
+                $labels = range('A', 'E');
                 foreach ($item['options'] as $idx => $opt) {
                     QuestionOption::create([
                         'question_id' => $question->id,
                         'text' => $opt['text'],
                         'is_correct' => $opt['is_correct'],
-                        'label' => range('A', 'E')[$idx],
+                        'label' => $labels[$idx],
                         'order' => $idx,
                     ]);
                 }
 
-                // Simpan Attachment jika ada
+                // Simpan Attachment jika ditemukan di dalam ZIP
                 if ($item['attachment']) {
                     $newPath = generateFilePath('questions', $question->id, 1, $item['attachment']['path']);
                     Storage::disk('public')->put($newPath, file_get_contents($item['attachment']['path']));
@@ -160,8 +171,7 @@ class QuestionPgWordImport2
                     ]);
                 }
             } catch (Exception $e) {
-                $this->addError($item['visual_row'], $item['no'], $item['text'], "Database Error: " . $e->getMessage());
-                throw $e; // Trigger rollback
+                throw new Exception("Baris Excel {$item['excel_row']}: Database Error - " . $e->getMessage());
             }
         }
     }
@@ -207,34 +217,5 @@ class QuestionPgWordImport2
             'question' => Str::limit($text, 50),
             'reason' => $reason
         ];
-    }
-
-    private function findTable($phpWord)
-    {
-        foreach ($phpWord->getSections() as $section) {
-            foreach ($section->getElements() as $element) {
-                if ($element instanceof Table)
-                    return $element;
-            }
-        }
-        return null;
-    }
-
-    private function getCellValue($cell)
-    {
-        if (!$cell instanceof Cell)
-            return '';
-        $text = '';
-        foreach ($cell->getElements() as $element) {
-            if (method_exists($element, 'getText')) {
-                $text .= $element->getText();
-            } elseif (method_exists($element, 'getElements')) {
-                foreach ($element->getElements() as $sub) {
-                    if (method_exists($sub, 'getText'))
-                        $text .= $sub->getText();
-                }
-            }
-        }
-        return trim($text);
     }
 }

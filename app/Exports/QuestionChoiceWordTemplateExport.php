@@ -5,7 +5,7 @@ namespace App\Exports;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
 
-class QuestionPgWordTemplateExport
+class QuestionChoiceWordTemplateExport
 {
     public static function export()
     {
@@ -13,7 +13,7 @@ class QuestionPgWordTemplateExport
         $section = $phpWord->addSection();
 
         // 1. Judul & Petunjuk
-        $section->addText("PETUNJUK PENGISIAN SOAL (WORD)", ['bold' => true, 'size' => 14]);
+        $section->addText("PETUNJUK PENGISIAN SOAL PILIHAN GANDA:", ['bold' => true, 'size' => 14]);
         $section->addListItem("Tulis teks SOAL di baris pertama setiap blok.");
         $section->addListItem("Baris 1-5 adalah pilihan JAWABAN (A, B, C, D, E).");
         $section->addListItem("Isi kolom KUNCI dengan angka 1 untuk jawaban benar.");

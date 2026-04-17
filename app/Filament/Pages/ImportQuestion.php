@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use App\Exports\QuestionPgTemplateExport;
-use App\Exports\QuestionPgWordTemplateExport;
-use App\Imports\QuestionPgExcelImport;
-use App\Imports\QuestionPgWordImport;
+use App\Enums\QuestionGroupType;
+use App\Exports\QuestionChoiceExcelTemplateExport;
+use App\Exports\QuestionChoiceWordTemplateExport;
+use App\Exports\QuestionTrueFalseExcelTemplateExport;
+use App\Imports\QuestionChoiceExcelImport;
+use App\Imports\QuestionChoiceWordImport;
+use App\Imports\QuestionTrueFalseExcelImport;
 use App\Models\QuestionCategory;
 use App\Models\Subject;
 use Exception;
@@ -23,6 +26,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 use ZipArchive;
+use PhpOffice\PhpSpreadsheet\IOFactory as ExcelFactory;
+use PhpOffice\PhpWord\IOFactory as WordFactory;
 
 class ImportQuestion extends Page
 {
@@ -66,12 +71,7 @@ class ImportQuestion extends Page
                                 ->label('Tipe Soal dalam File')
                                 ->searchable()
                                 ->preload()
-                                ->options([
-                                    'pg' => 'Pilihan Ganda (Single & Multiple)',
-                                    'tf' => 'True / False',
-                                    'short' => 'Jawaban Singkat',
-                                    'essay' => 'Essay',
-                                ])
+                                ->options(QuestionGroupType::options())
                                 ->required(),
                         ])->columnSpan(1),
 
@@ -139,23 +139,20 @@ class ImportQuestion extends Page
                         ->label('Pilih Tipe Template')
                         ->searchable()
                         ->preload()
-                        ->options([
-                            'pg' => 'Pilihan Ganda (Single & Multiple)',
-                            'tf' => 'True / False',
-                            'short' => 'Jawaban Singkat',
-                            'essay' => 'Essay',
-                        ])->required()
+                        ->options(QuestionGroupType::options())
+                        ->required()
                 ])
                 ->action(function (array $data) {
                     if ($data['format'] === 'word') {
                         return match ($data['template_type']) {
-                            'pg' => QuestionPgWordTemplateExport::export(),
+                            'pg' => QuestionChoiceWordTemplateExport::export(),
                             default => Notification::make()->title('Template belum tersedia')->danger()->send(),
                         };
                     }
 
                     return match ($data['template_type']) {
-                        'pg' => Excel::download(new QuestionPgTemplateExport, 'template_soal_pilihan_ganda_' . now()->format('Ymd_His') . '.xlsx'),
+                        'pg' => Excel::download(new QuestionChoiceExcelTemplateExport, 'template_soal_pilihan_ganda_' . now()->format('Ymd_His') . '.xlsx'),
+                        'tf' => Excel::download(new QuestionTrueFalseExcelTemplateExport, 'template_soal_benar_salah_' . now()->format('Ymd_His') . '.xlsx'),
                         default => Notification::make()->title('Template belum tersedia')->danger()->send(),
                     };
                 }),
@@ -203,18 +200,46 @@ class ImportQuestion extends Page
                 }
             }
 
-            if ($state['type'] === 'pg') {
-                if ($extension === 'docx') {
-                    $import = new QuestionPgWordImport(
-                        $state['subject_id'],
-                        $state['question_category_id'],
-                        $tempPath
-                    );
-                    $import->import($fileToProcess);
-                } else {
-                    $import = new QuestionPgExcelImport($state['subject_id'], $state['question_category_id'], $tempPath);
-                    Excel::import($import, $fileToProcess);
-                }
+            $type = QuestionGroupType::from($state['type']);
+            $format = ($extension === 'docx') ? 'docx' : 'excel';
+
+            try {
+                $this->validateTemplate($fileToProcess, $format, $type);
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+            $importerMap = [
+                'pg' => [
+                    'docx' => QuestionChoiceWordImport::class,
+                    'excel' => QuestionChoiceExcelImport::class,
+                ],
+                'tf' => [
+                    'docx' => QuestionTrueFalseExcelImport::class,
+                    'excel' => QuestionTrueFalseExcelImport::class,
+                ],
+            ];
+
+            $importClass = $importerMap[$type->value][$format];
+
+            if (!isset($importClass)) {
+                throw new Exception("Import untuk tipe {$type->getLabel()} dengan format {$extension} belum didukung.");
+            }
+
+            if ($format === 'docx') {
+                $import = new $importClass(
+                    $state['subject_id'],
+                    $state['question_category_id'],
+                    $tempPath
+                );
+                $import->import($fileToProcess);
+            } else {
+                $import = new $importClass(
+                    $state['subject_id'],
+                    $state['question_category_id'],
+                    $tempPath
+                );
+                Excel::import($import, $fileToProcess);
             }
 
             Notification::make()
@@ -228,7 +253,6 @@ class ImportQuestion extends Page
         } catch (Exception $e) {
             DB::rollBack();
 
-            // Ambil daftar kegagalan dari class import jika ada
             if (isset($import) && !empty($import->importErrors)) {
                 $this->failures = $import->importErrors;
 
@@ -238,7 +262,6 @@ class ImportQuestion extends Page
                     ->danger()
                     ->send();
             } else {
-                // Error sistem lainnya (file tidak ketemu, database mati, dll)
                 Notification::make()
                     ->title('Terjadi Kesalahan Sistem')
                     ->body($e->getMessage())
@@ -246,15 +269,48 @@ class ImportQuestion extends Page
                     ->send();
             }
         } finally {
-            // AKAN SELALU JALAN: Baik berhasil maupun error
             if ($tempPath && File::exists($tempPath)) {
                 File::deleteDirectory($tempPath);
             }
 
-            // Hapus juga file upload asli dari storage temp Laravel jika sudah tidak dibutuhkan
             if (isset($state['file'])) {
                 Storage::disk('local')->delete($state['file']);
             }
+        }
+    }
+
+    private function validateTemplate($filePath, $format, $type)
+    {
+        $expectedKeyword = $type->getTemplateKeyword();
+        $actualText = '';
+
+        if (!file_exists($filePath)) {
+            throw new Exception("File tidak ditemukan di sistem atau sesi upload telah berakhir. Silakan refresh halaman dan upload ulang file Anda.");
+        }
+
+        try {
+            if ($format === 'excel') {
+                $spreadsheet = ExcelFactory::load($filePath);
+                $actualText = $spreadsheet->getActiveSheet()->getCell('A1')->getValue();
+            } else {
+                $phpWord = WordFactory::load($filePath);
+                $sections = $phpWord->getSections();
+                if (isset($sections[0])) {
+                    $elements = $sections[0]->getElements();
+                    if (isset($elements[0]) && method_exists($elements[0], 'getText')) {
+                        $actualText = $elements[0]->getText();
+                    }
+                }
+            }
+        } catch (\Throwable $th) {
+            throw new Exception("Gagal membaca struktur file tersebut. File mungkin rusak atau tidak terbaca. Silakan refresh halaman dan upload ulang file Anda.");
+        }
+
+        if (!str_contains(strtoupper($actualText), strtoupper($expectedKeyword))) {
+            throw new Exception(
+                "File yang diunggah bukan template {$type->getLabel()}. " .
+                "Harap gunakan template yang sesuai agar data terbaca dengan benar."
+            );
         }
     }
 }

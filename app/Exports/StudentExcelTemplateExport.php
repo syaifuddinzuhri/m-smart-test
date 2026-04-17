@@ -12,7 +12,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StudentTemplateExport implements FromArray, WithHeadings, WithEvents, ShouldAutoSize, WithStyles
+class StudentExcelTemplateExport implements FromArray, WithHeadings, WithEvents, ShouldAutoSize, WithStyles
 {
     public function headings(): array
     {
