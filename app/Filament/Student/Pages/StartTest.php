@@ -63,7 +63,7 @@ class StartTest extends Page implements HasForms, HasActions
             return redirect()->to('/student');
         }
 
-        if($this->session->status === ExamSessionStatus::PAUSE){
+        if ($this->session->status === ExamSessionStatus::PAUSE) {
             $this->isLocked = true;
         }
 
@@ -91,6 +91,9 @@ class StartTest extends Page implements HasForms, HasActions
 
     public function lockExam(): void
     {
+        if (!isProduction())
+            return;
+
         $updateData = [
             'status' => ExamSessionStatus::PAUSE->value,
             'last_violation_at' => now(),

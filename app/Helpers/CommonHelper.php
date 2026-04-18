@@ -11,6 +11,13 @@ if (!function_exists('generate_exam_system_id')) {
     }
 }
 
+if (!function_exists('isProduction')) {
+    function isProduction()
+    {
+        return app()->environment('production');
+    }
+}
+
 if (!function_exists('normalizeUsername')) {
     /**
      * Mengubah username menjadi huruf kecil, menghapus spasi

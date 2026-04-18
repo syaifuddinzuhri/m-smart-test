@@ -78,7 +78,7 @@ class StudentPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 function (): string {
-                    if (app()->environment('production')) {
+                    if (isProduction()) {
                         return Blade::render('
                             <script>
                                 document.oncontextmenu = function() { return false; };
