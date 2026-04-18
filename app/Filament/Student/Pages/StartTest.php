@@ -125,6 +125,7 @@ class StartTest extends Page implements HasForms, HasActions
             'system_id' => null
         ];
         $this->session->update($updateData);
+        $this->dispatch('prepare-navigation');
         return redirect()->to('/student/input-token?exam_id=' . $this->exam->id);
     }
 

@@ -1,142 +1,138 @@
 <x-filament-panels::page>
     <div x-data="{
         isLocked: @entangle('isLocked'),
+        showFullscreenOverlay: true,
         lockExam() {
             if (!this.isLocked) {
                 $wire.call('lockExam');
             }
         },
-        checkFullscreen() {
-            checkFullscreen() {
-                // Cek apakah ini perangkat mobile iOS
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-                if (isIOS) {
-                    // Di iOS, kita tidak bisa paksa Fullscreen,
-                    // jadi kita andalkan visibilitychange (pindah tab/minimize)
-                    return;
-                }
-
-                // Untuk Android & Desktop, tetap paksa Fullscreen
-                if (!document.fullscreenElement && !this.isLocked) {
-                    this.lockExam();
-                }
+        handleFullscreenChange() {
+            if (!document.fullscreenElement && !this.isLocked) {
+                // Jika keluar fullscreen, cukup tampilkan overlay, JANGAN lock
+                this.showFullscreenOverlay = true;
             }
         }
-    }" @visibilitychange.window="if (document.hidden) lockExam()" @blur.window="lockExam()"
-        @fullscreenchange.window="checkFullscreen()"
+    }"
         @keydown.window="
-        if ($event.keyCode == 123 || ($event.ctrlKey && $event.shiftKey && $event.keyCode == 73) || ($event.ctrlKey && $event.keyCode == 85) || $event.metaKey) {
-            lockExam();
+        const key = $event.key.toLowerCase();
+        const isCmdOrCtrl = $event.ctrlKey || $event.metaKey;
+
+        // Pengecualian Reload: F5 (116) atau Ctrl+R / Cmd+R
+        if (key === 'f5' || (isCmdOrCtrl && key === 'r')) {
+            return;
+        }
+
+        // BLOKIR AKSES BERBAHAYA
+        if (
+            (isCmdOrCtrl && ['t', 'n', 'u', 'i', 'j', 'p', 'e', 'k'].includes(key)) ||
+            (isCmdOrCtrl && $event.shiftKey && ['n', 'i', 'j'].includes(key)) ||
+            $event.key === 'F12' ||
+            $event.altKey ||
+            ($event.metaKey && key !== 'r')
+        ) {
             $event.preventDefault();
+            lockExam();
         }
     "
-        class="relative">
-        @if ($isLocked)
-            <div class="bg-gray-500/20"
-                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(20px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 24px;">
+        @fullscreenchange.window="handleFullscreenChange()" @visibilitychange.window="if (document.hidden) lockExam()"
+        @blur.window="setTimeout(() => { if (!document.hasFocus()) lockExam() }, 250)" class="relative">
 
-                <div
-                    class="bg-white rounded-xl shadow-xl p-4 text-center border border-gray-100 w-full max-w-xl transition-all scale-100">
-
-                    <div class="mb-4 flex justify-center">
-
-                        <img src="{{ asset('icons/shield.png') }}" class="w-20" alt="">
-
+        <template x-if="showFullscreenOverlay && !isLocked">
+            <div
+                class="fixed inset-0 z-[999998] bg-black/60 backdrop-blur-md flex items-center justify-center p-6 text-center">
+                <div class="bg-white p-8 rounded-2xl max-w-sm shadow-2xl">
+                    <div class="text-amber-500 mb-4 animate-bounce">
+                        <x-heroicon-o-arrows-pointing-out class="w-16 h-16 mx-auto" />
                     </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900 uppercase tracking-tight">
+                        Mode Ujian Fullscreen
+                    </h3>
 
-                    <h2 class="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-3">
-                        Akses Terputus!
-                    </h2>
-
-                    <div class="space-y-4 mb-10">
-                        <p class="text-md text-gray-600 font-medium leading-relaxed">
-                            Sistem mendeteksi aktivitas di luar jendela ujian. Untuk menjaga integritas, sesi Anda telah
-                            <span class="text-red-600 font-bold underline">DITANGGUHKAN</span> secara otomatis.
+                    <div class="space-y-3 mb-6">
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            Untuk menjaga integritas dan kenyamanan, Anda wajib mengerjakan ujian dalam mode layar
+                            penuh.
                         </p>
 
-                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3 text-left">
-                            <x-heroicon-m-information-circle class="w-5 h-5 text-amber-600 shrink-0" />
-                            <p class="text-xs text-gray-500 font-medium leading-normal">
-                                Pelanggaran dicatat oleh sistem (IP, Waktu, & Perangkat). Silahkan hubungi pengawas
-                                ruangan jika ini adalah kendala teknis yang tidak disengaja.
+                        <div
+                            class="bg-red-50 border border-red-100 rounded-lg p-2 flex items-center gap-2 justify-center">
+                            <p class="text-xs font-bold text-red-700 uppercase tracking-wide">
+                                Peringatan: Waktu ujian tetap berjalan!
                             </p>
                         </div>
                     </div>
-
-                    <div class="flex flex-col gap-3">
-                        <x-filament::button color="danger" size="xl" wire:click="backToDashboard"
-                            class="w-full !rounded-2xl py-4 text-lg font-black uppercase tracking-wide shadow-xl shadow-red-100"
-                            icon="heroicon-m-arrow-path">
-                            Minta Token Baru
-                        </x-filament::button>
-
-                        <p class="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-black mt-6">
-                            Security Protocol — System ID: {{ $session->system_id }}
-                        </p>
-                    </div>
+                    <x-filament::button size="lg" color="warning" class="w-full"
+                        @click="triggerFullScreen(); showFullscreenOverlay = false">
+                        Klik untuk Fullscreen
+                    </x-filament::button>
+                    <p class="mt-4 text-[10px] text-gray-400 uppercase font-medium">
+                        MANUSGI SMART TEST • SECURITY PROTOCOL
+                    </p>
                 </div>
             </div>
+        </template>
+
+        @if ($isLocked)
+            @include('filament.student.pages.parts.lock-overlay')
         @endif
 
-        <div style="{{ $isLocked ? 'filter: blur(40px); pointer-events: none; user-select: none; opacity: 0.1;' : '' }}"
-            class="transition-all duration-1000">
-            <div x-data="{ showOverlay: true }" x-show="showOverlay" @click="triggerFullScreen(); showOverlay = false"
-                class="fixed inset-0 z-[999999] bg-white/10 backdrop-blur-[2px] flex items-center justify-center cursor-pointer">
-                <div class="bg-primary-600 text-white px-6 py-3 rounded-full font-bold animate-bounce shadow-2xl">
-                    Klik Layar untuk Memulai Ujian
-                </div>
-            </div>
+        <div :style="isLocked || showFullscreenOverlay ? 'filter: blur(20px); pointer-events: none;' : ''">
             @include('filament.student.pages.parts.exam-content')
         </div>
     </div>
 
     @push('scripts')
         <script>
+            let isNavigatingAllowed = false;
+
+            window.addEventListener('prepare-navigation', () => {
+                isNavigatingAllowed = true;
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(err => {});
+                }
+                window.onbeforeunload = null;
+            });
+
+            // Izinkan browser melakukan refresh tanpa interupsi lock
+            window.onbeforeunload = function(e) {
+                if (!@js($isLocked) && !isNavigatingAllowed) {
+                    const msg = "Sesi ujian sedang berjalan.";
+                    e.returnValue = msg;
+                    return msg;
+                }
+            };
+
             const triggerFullScreen = () => {
                 const elem = document.documentElement;
                 const rfs = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen;
                 if (rfs) {
-                    rfs.call(elem).catch(err => {
-                        console.warn(`Error attempting to enable full-screen mode: ${err.message}`);
-                    });
+                    rfs.call(elem).catch(err => console.warn('Fullscreen Error:', err));
                 }
             };
 
-            // Fungsi untuk memaksa fullscreen di interaksi pertama apa pun
+            // Trigger awal setelah load/refresh
             const forceStart = () => {
-                triggerFullScreen();
-                // Hapus event listener setelah berhasil agar tidak mengganggu performa
-                ['click', 'keydown', 'touchstart'].forEach(event => {
-                    document.removeEventListener(event, forceStart);
-                });
+                if (!@js($isLocked)) triggerFullScreen();
+                ['click', 'touchstart'].forEach(ev => document.removeEventListener(ev, forceStart));
             };
-
-            // Pasang listener pada hampir semua interaksi awal
-            document.addEventListener('click', () => {
-                if (!document.fullscreenElement && !@js($isLocked)) {
-                    triggerFullScreen();
-                }
-            }, {
-                once: true
-            });
-            document.addEventListener('keydown', forceStart);
+            document.addEventListener('click', forceStart);
             document.addEventListener('touchstart', forceStart);
 
-            // Deteksi perubahan fullscreen
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    // Jika keluar fullscreen, cek apakah halaman sedang terkunci atau tidak
-                    // Jika tidak terkunci, paksa kunci lewat Livewire
+            // Mencegah Klik Kanan & Tengah
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('auxclick', (e) => {
+                if (e.button === 1) {
+                    e.preventDefault();
                     @this.call('lockExam');
                 }
             });
 
-            // Tambahan: Auto-focus jika user kembali ke tab ini
-            window.addEventListener('focus', () => {
-                if (!document.fullscreenElement && !@js($isLocked)) {
-                    // Memberi peringatan halus atau langsung kunci
-                    console.log('User returned to tab');
+            // Cegah Ctrl + Click
+            document.addEventListener('click', (e) => {
+                if ((e.ctrlKey || e.metaKey) && !isNavigatingAllowed) {
+                    e.preventDefault();
+                    @this.call('lockExam');
                 }
             });
         </script>
