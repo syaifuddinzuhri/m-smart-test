@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <div
-        class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+        class="flex flex-col md:flex-row gap-4 gap-y-2 justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-gray-200">
         <div class="flex bg-gray-100 p-1 rounded-xl w-full">
             <button wire:click="setTab('pg')" @class([
                 'flex-1 md:w-40 py-2 text-sm font-bold rounded-lg transition-all',

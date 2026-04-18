@@ -134,6 +134,12 @@ class ManageExamTokens extends Page
             ]);
         }
 
+        $this->tokenState = [
+            'type' => 'access',
+            'duration' => 15,
+            'quantity' => 1,
+        ];
+
         Notification::make()->title("$qty Token Berhasil Dibuat")->success()->send();
     }
 

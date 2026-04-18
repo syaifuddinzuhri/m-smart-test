@@ -45,6 +45,21 @@
         @endif
 
         <div :style="isLocked ? 'filter: blur(20px); pointer-events: none;' : ''">
+            <div class="flex gap-3 gapy-4 mb-4">
+                <img src="{{ asset('images/logo.webp') }}" class="h-10 w-auto">
+                <div class="flex flex-col gap-y-2">
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                        {{ $exam->title }}
+                    </h1>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
+                        {{ $exam->category?->name }} |
+                        {{ $exam->subject?->name }} |
+                        <span>
+                            {{ $exam->classrooms->pluck('code')->join(', ') }}
+                        </span>
+                    </p>
+                </div>
+            </div>
             @include('filament.student.pages.parts.exam-content')
         </div>
     </div>
