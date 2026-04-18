@@ -1,16 +1,17 @@
 <div class="space-y-6">
     <div
-        class="flex flex-col md:flex-row gap-4 gap-y-2 justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-        <div class="flex bg-gray-100 p-1 rounded-xl w-full">
+        class="flex flex-col md:flex-row gap-4 justify-between items-stretch bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+
+        <div class="flex bg-gray-100 p-1 rounded-xl flex-1 items-stretch">
             <button wire:click="setTab('pg')" @class([
-                'flex-1 md:w-40 py-2 text-sm font-bold rounded-lg transition-all',
+                'flex-1 py-2 px-4 text-sm font-bold rounded-lg transition-all flex items-center justify-center',
                 'bg-white shadow text-primary-600' => $activeTab === 'pg',
                 'text-gray-500 hover:text-gray-700' => $activeTab !== 'pg',
             ])>
                 Pilihan Ganda ({{ $totalPG }})
             </button>
             <button wire:click="setTab('essay')" @class([
-                'flex-1 md:w-40 py-2 text-sm font-bold rounded-lg transition-all',
+                'flex-1 py-2 px-4 text-sm font-bold rounded-lg transition-all flex items-center justify-center',
                 'bg-white shadow text-primary-600' => $activeTab === 'essay',
                 'text-gray-500 hover:text-gray-700' => $activeTab !== 'essay',
             ])>
@@ -18,9 +19,14 @@
             </button>
         </div>
 
-        <div x-data="timerHandler(@js($durationInSeconds))" x-init="initTimer()">
-            <div class="px-6 py-2 bg-red-50 border border-red-100 rounded-xl">
-                <span class="text-red-600 font-mono font-black text-xl" x-text="formatTime(remaining)">00:00:00</span>
+        <div x-data="timerHandler(@js($durationInSeconds))" x-init="initTimer()" class="flex">
+            <div
+                class="px-6 py-2 bg-red-50 flex flex-col justify-center items-center border border-red-100 rounded-xl w-full md:w-auto">
+                <span class="text-[10px] uppercase tracking-wider font-bold text-red-400 leading-none mb-1">Sisa
+                    Waktu</span>
+                <span class="text-red-600 font-mono font-black text-xl leading-none" x-text="formatTime(remaining)">
+                    00:00:00
+                </span>
             </div>
         </div>
     </div>
@@ -47,7 +53,7 @@
             </div>
         </div>
 
-        <div class="px-4 py-2 mt-10 border-t border-gray-100 ">
+        <div class="px-4 py-2 mt-10 border-t border-gray-100 " id="soal-container">
             {{ $this->form }}
         </div>
     </div>
@@ -64,8 +70,8 @@
                     <span class="hidden md:inline">Sebelumnya</span>
                 </x-filament::button>
             @endif
-            <x-filament::button tag="button" wire:click="toggleDoubt"
-                color="warning" :outlined="!in_array($this->currentQuestionId, $doubtfulQuestions)" class="w-full">
+            <x-filament::button tag="button" wire:click="toggleDoubt" color="warning" :outlined="!in_array($this->currentQuestionId, $doubtfulQuestions)"
+                class="w-full">
                 <span class="md:hidden">Ragu</span>
                 <span class="hidden md:inline">Ragu-Ragu</span>
             </x-filament::button>
@@ -199,18 +205,26 @@
 <script>
     document.addEventListener('livewire:initialized', () => {
         Livewire.on('step-changed', () => {
-            // 1. Scroll ke paling atas halaman
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth' // Gunakan 'smooth' untuk efek halus, atau 'auto' untuk instan
-            });
+            const isMobile = window.innerWidth <= 768;
 
-            /*
-            const element = document.getElementById('question-area');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (isMobile) {
+                const element = document.getElementById('soal-container');
+                const topbarOffset = 80;
+
+                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementPosition - topbarOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+
+            } else {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth' // Gunakan 'smooth' untuk efek halus, atau 'auto' untuk instan
+                });
             }
-            */
         });
     });
 </script>

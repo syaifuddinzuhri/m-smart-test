@@ -45,19 +45,22 @@
         @endif
 
         <div :style="isLocked ? 'filter: blur(20px); pointer-events: none;' : ''">
-            <div class="flex gap-3 gapy-4 mb-4">
-                <img src="{{ asset('images/logo.webp') }}" class="h-10 w-auto">
-                <div class="flex flex-col gap-y-2">
+            <div class="flex items-center md:items-start flex-col md:flex-row gap-3 gap-y-4 mb-4 w-full">
+                <img src="{{ asset('images/logo.webp') }}" class="md:h-10 md:w-auto w-14">
+                <div class="flex flex-col items-center md:items-start gap-y-1 w-full">
                     <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                         {{ $exam->title }}
                     </h1>
-                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
-                        {{ $exam->category?->name }} |
-                        {{ $exam->subject?->name }} |
-                        <span>
-                            {{ $exam->classrooms->pluck('code')->join(', ') }}
-                        </span>
-                    </p>
+                    <div class="flex items-center gap-y-2 flex-col md:flex-row md:items-center md:justify-between w-full">
+                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
+                            {{ $exam->category?->name }} |
+                            {{ $exam->subject?->name }} |
+                            <span>
+                                {{ $exam->classrooms->pluck('code')->join(', ') }}
+                            </span>
+                        </p>
+                        @include('components.realtime-server-time-test')
+                    </div>
                 </div>
             </div>
             @include('filament.student.pages.parts.exam-content')
