@@ -135,6 +135,7 @@ class ActiveExamsTable extends BaseWidget
                             return 'Mulai Ujian';
 
                         return match ($session->status) {
+                            ExamSessionStatus::PAUSE => 'Lanjutkan',
                             ExamSessionStatus::ONGOING => 'Lanjutkan',
                             ExamSessionStatus::COMPLETED => 'Sudah Selesai',
                             default => 'Sedang Dikerjakan',
