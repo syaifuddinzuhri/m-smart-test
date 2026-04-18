@@ -50,6 +50,18 @@ class InputToken extends Page implements HasForms
             return redirect()->to('/student');
         }
 
+        ExamSession::where('user_id', auth()->id())
+            ->where('exam_id', $this->exam_id)
+            ->where(function ($query) {
+                $query->whereNotNull('token')
+                    ->orWhereNotNull('system_id');
+            })
+            ->update([
+                'token' => null,
+                'system_id' => null,
+                'status' => ExamSessionStatus::PAUSE
+            ]);
+
         $this->form->fill();
     }
 

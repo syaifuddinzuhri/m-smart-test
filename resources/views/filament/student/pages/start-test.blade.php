@@ -57,6 +57,7 @@
             window.isPageReady = false;
             window.isReloading = false;
             window.isNavigatingAllowed = false; // Flag untuk navigasi resmi
+
             const lockHistory = () => {
                 if (window.isNavigatingAllowed) return;
                 const currentUrl = window.location.href.split('#')[0];
