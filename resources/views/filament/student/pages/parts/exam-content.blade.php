@@ -14,7 +14,7 @@
                 'bg-white shadow text-primary-600' => $activeTab === 'essay',
                 'text-gray-500 hover:text-gray-700' => $activeTab !== 'essay',
             ])>
-                Jawaban Singkat / Essay ({{ $totalEssay }})
+                Essai / Uraian ({{ $totalEssay }})
             </button>
         </div>
 
