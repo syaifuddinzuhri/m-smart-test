@@ -1,5 +1,5 @@
-<x-filament-widgets::widget>
-    <x-filament::section>
+<x-filament-widgets::widget class="h-full">
+    <x-filament::section class="h-full">
         <x-slot name="heading">
             <div class="flex items-center gap-2 text-primary-600">
                 <x-heroicon-m-information-circle class="w-6 h-6" />
