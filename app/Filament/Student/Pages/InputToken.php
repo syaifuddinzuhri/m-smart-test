@@ -140,8 +140,6 @@ class InputToken extends Page implements HasForms
             return;
         }
 
-        $tokenSession = null;
-
         try {
             $tokenSession = DB::transaction(function () use ($validToken, $maxAllowed, $user) {
                 $rowsAffected = ExamToken::where('id', $validToken->id)
@@ -161,6 +159,7 @@ class InputToken extends Page implements HasForms
                 $token = $this->initializeExamSession($user);
                 return $token;
             });
+            return redirect()->to(route('filament.student.pages.start-test', ['token' => $tokenSession]));
         } catch (Exception $e) {
             Notification::make()
                 ->title('Gagal Memulai Ujian')
@@ -169,14 +168,6 @@ class InputToken extends Page implements HasForms
                 ->send();
         }
 
-        if (!$tokenSession) {
-            Notification::make()
-                ->title('Gagal Memulai Ujian')
-                ->danger()
-                ->send();
-        }
-
-        return redirect()->to(route('filament.student.pages.start-test', ['token' => $tokenSession]));
     }
 
     private function initializeExamSession(User $user)
@@ -192,8 +183,8 @@ class InputToken extends Page implements HasForms
             throw new Exception("Anda sudah menyelesaikan ujian ini.");
         }
 
-        if ($this->session->violation_count >= 5) {
-            $this->session->update(['status' => ExamSessionStatus::PAUSE]);
+        if ($session->violation_count >= 5) {
+            $session->update(['status' => ExamSessionStatus::PAUSE]);
             throw new ExecException("Anda terlalu sering keluar atau melanggar ketentuan ujain. Hubungi pengawas agar ditindak lanjut");
         }
 
@@ -213,9 +204,17 @@ class InputToken extends Page implements HasForms
             $uniqueQuestionSeed = crc32($userId . $examId . 'question' . now()->timestamp);
             $uniqueOptionSeed = crc32($userId . $examId . 'option' . now()->timestamp);
 
+            $sessionExtensionLog = $session->extension_log ?? [];
+
+            if (count($sessionExtensionLog) > 0) {
+                $additional = collect($sessionExtensionLog)->sum('minutes');
+            } else {
+                $additional = collect($this->record->extension_log ?? [])->sum('minutes');
+            }
+
             $updateData = array_merge($updateData, [
                 'started_at' => now(),
-                'remaining_duration' => $this->record->duration * 60,
+                'expires_at' => now()->addMinutes($this->record->duration + $additional),
                 'question_seed' => $uniqueQuestionSeed,
                 'option_seed' => $uniqueOptionSeed,
             ]);

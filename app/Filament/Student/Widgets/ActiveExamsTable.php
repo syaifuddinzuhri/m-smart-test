@@ -66,7 +66,29 @@ class ActiveExamsTable extends BaseWidget
 
                     Split::make([
                         Tables\Columns\TextColumn::make('duration')
-                            ->formatStateUsing(fn($state) => $state . ' Menit')
+                            ->getStateUsing(function (Exam $exam) {
+                                $session = $exam->sessions->first();
+
+                                $baseDuration = $exam->duration ?? 0;
+
+                                // 1. Ambil log dari session (individu)
+                                $sessionLogs = collect($session->extension_log ?? []);
+
+                                // 2. Ambil log dari exam (global)
+                                $examLogs = collect($exam->extension_log ?? []);
+
+                                /**
+                                 * Logika Sesuai Request:
+                                 * - Jika ada session log (individu), ambil sum dari situ.
+                                 * - Jika session log kosong (meskipun ada session), atau belum ada session,
+                                 *   ambil sum dari exam log (global).
+                                 */
+                                $additionalMinutes = $sessionLogs->isNotEmpty()
+                                    ? $sessionLogs->sum('minutes')
+                                    : $examLogs->sum('minutes');
+
+                                return $baseDuration + $additionalMinutes;
+                            })
                             ->badge()
                             ->color('danger'),
 

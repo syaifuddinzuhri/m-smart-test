@@ -13,6 +13,66 @@ use Illuminate\Support\Facades\DB;
 trait HasExamStorage
 {
 
+    protected function syncAndValidateTimer()
+    {
+        $this->session->refresh();
+        $this->exam->refresh();
+
+        $now = now();
+
+        // 1. Ambil data dari database
+        $deadline = $this->session->expires_at; // Carbon or null
+        $globalEndTime = $this->exam->end_time; // Carbon or null
+
+        // 2. Logika Penentuan Target Waktu (Null-Safe)
+        if (!$deadline && !$globalEndTime) {
+            // Jika keduanya null (kasus darurat), gunakan durasi ujian dari sekarang
+            $targetTime = $now->copy()->addMinutes($this->exam->duration);
+        } elseif (!$deadline) {
+            // Jika belum mulai (expires_at null), gunakan global end time
+            $targetTime = $globalEndTime;
+        } elseif (!$globalEndTime) {
+            // Jika ujian tidak punya jadwal selesai (gerbang buka terus), gunakan expires_at
+            $targetTime = $deadline;
+        } else {
+            // Jika keduanya ada, baru gunakan min() untuk cari yang paling cepat habis
+            $targetTime = $deadline->min($globalEndTime);
+        }
+
+        // 3. Hitung Sisa Detik
+        $remainingSeconds = $now->diffInSeconds($targetTime, false);
+
+        // 4. Update Heartbeat & Sinkronisasi database untuk Admin
+        // Kita simpan integer sisa detiknya agar Admin tidak perlu hitung manual lagi
+        $this->session->update([
+            'last_activity' => $now,
+        ]);
+
+        // 5. Jika Waktu Habis
+        if ($remainingSeconds <= 0) {
+            $this->durationInSeconds = 0;
+            return $this->timeOut();
+        }
+
+        $this->durationInSeconds = (int) $remainingSeconds;
+    }
+
+    /**
+     * Fungsi helper untuk menutup sesi jika jadwal benar-benar habis
+     */
+    protected function forceCloseSession($reason)
+    {
+        $this->session->update([
+            'status' => ExamSessionStatus::COMPLETED,
+            'finished_at' => now(),
+            'token' => null,
+            'system_id' => null,
+        ]);
+
+        Notification::make()->title('Sesi Berakhir')->body($reason)->danger()->persistent()->send();
+        return redirect()->to('/student');
+    }
+
     protected function validateSessionState()
     {
         $this->session->refresh();
@@ -46,6 +106,12 @@ trait HasExamStorage
     }
     public function saveAnswer($questionId = null, $moveNext = false)
     {
+        $this->syncAndValidateTimer();
+
+        if ($this->durationInSeconds <= 0) {
+            return;
+        }
+
         $validation = $this->validateSessionState();
         if ($validation !== true) {
             return $validation;

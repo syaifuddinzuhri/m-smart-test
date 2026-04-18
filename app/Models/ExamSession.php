@@ -17,9 +17,11 @@ class ExamSession extends Model
     protected $casts = [
         'status' => ExamSessionStatus::class,
         'started_at' => 'datetime',
+        'expires_at' => 'datetime',
         'finished_at' => 'datetime',
         'last_violation_at' => 'datetime',
         'last_activity' => 'datetime',
+        'extension_log' => 'array',
         'violation_log' => 'array',
     ];
 

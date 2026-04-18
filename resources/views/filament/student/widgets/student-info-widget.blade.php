@@ -29,6 +29,11 @@
             </div>
 
             <div class="space-y-1">
+                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Jenis Kelamin</p>
+                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->gender?->getLabel() ?? '-' }}</p>
+            </div>
+
+            <div class="space-y-1">
                 <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tempat/Tanggal Lahir</p>
                 <p class="text-sm font-semibold text-gray-800">
                     @if ($user->student?->pob && $user->student?->dob)
@@ -38,13 +43,10 @@
                         {{ $user->student->pob }}, -
                     @elseif($user->student?->dob)
                         {{ \Carbon\Carbon::parse($user->student->dob)->translatedFormat('d F Y') }}
+                    @else
+                        -
                     @endif
                 </p>
-            </div>
-
-            <div class="space-y-1">
-                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Jenis Kelamin</p>
-                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->gender?->getLabel() ?? '-' }}</p>
             </div>
         </div>
 

@@ -76,16 +76,38 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    @php
+                        // 1. Ambil durasi dasar (asumsi $record adalah ExamSession)
+                        // Jika $record adalah Exam, gunakan $record->duration
+                        $baseDuration = $record->duration ?? ($record->exam->duration ?? 0);
+
+                        // 2. Hitung Tambahan (Sesuai Logika Sebelumnya)
+                        $sessionLogs = collect($record->extension_log ?? []);
+                        $examLogs = isset($record->exam) ? collect($record->exam->extension_log ?? []) : collect([]);
+
+                        // Prioritas: Jika ada log individu pakai itu, jika tidak ada pakai log global (exam)
+                        $additional = $sessionLogs->isNotEmpty()
+                            ? $sessionLogs->sum('minutes')
+                            : $examLogs->sum('minutes');
+                    @endphp
+
                     <div class="text-center px-4 border-l border-gray-100">
-                        <span
-                            class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Durasi</span>
+                        <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">
+                            Durasi
+                        </span>
                         <x-filament::badge color="info" size="sm" icon="heroicon-m-clock">
-                            {{ $record->duration }} Menit
+                            {{ $baseDuration }}
+                            @if ($additional > 0)
+                                <span class="text-success-600 font-bold"> +{{ $additional }}</span>
+                            @endif
+                            Menit
                         </x-filament::badge>
                     </div>
+
                     <div class="text-center px-4 border-l border-gray-100">
-                        <span
-                            class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Status</span>
+                        <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">
+                            Status
+                        </span>
                         <x-filament::badge :color="$record->status->getColor()" size="sm">
                             {{ $record->status->getLabel() }}
                         </x-filament::badge>

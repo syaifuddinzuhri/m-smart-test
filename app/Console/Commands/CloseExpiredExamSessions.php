@@ -9,49 +9,51 @@ use Illuminate\Support\Facades\DB;
 
 class CloseExpiredExamSessions extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'exam:close-expired-sessions';
+    protected $description = 'Menutup sesi ujian yang sudah melewati deadline pengerjaan atau jadwal global';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Menutup sesi ujian yang sudah habis waktunya atau melewati batas jadwal';
-
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        DB::transaction(function () {
-            // 1. Ambil Sesi yang:
-            // - Status masih ONGOING atau PAUSE (terkunci)
-            // - DAN (Sisa durasi sudah 0 ATAU waktu akhir ujian sudah lewat + 15 menit)
+        $this->info("Memulai proses pemeriksaan sesi kadaluarsa...");
 
-            $affectedRows = ExamSession::whereIn('status', [
+        ExamSession::query()
+            ->whereIn('status', [
                 ExamSessionStatus::ONGOING,
                 ExamSessionStatus::PAUSE
             ])
-                ->where('updated_at', '>', now()->subDay())
-                ->where(function ($query) {
-                    $query->where('remaining_duration', '<=', 0) // Kondisi durasi habis
-                        ->orWhereHas('exam', function ($q) {
-                            $q->where('end_time', '<', now()->subMinutes(15)); // Kondisi jadwal habis
-                        });
-                })
-                ->update([
-                    'status' => ExamSessionStatus::COMPLETED,
-                    'finished_at' => now(),
-                    'token' => null,      // Keamanan: Hapus token agar tidak bisa ditembus lagi
-                    'system_id' => null,  // Keamanan: Lepas binding device
-                ]);
+            ->with('exam')
+            ->each(function (ExamSession $session) {
+                try {
+                    DB::transaction(function () use ($session) {
+                        $now = now();
+                        if (!$session->exam)
+                            return;
 
-            $this->info("Berhasil menutup {$affectedRows} sesi ujian yang expired.");
-        });
+                        // 1. Cek Deadline Jadwal Global (Gerbang Ujian + Toleransi 15 menit)
+                        $isPastEndTime = $session->exam->end_time->addMinutes(15)->isPast();
+
+                        // 2. Cek Deadline Individu (Siswa harus selesai jam sekian)
+                        // Karena expires_at adalah waktu statis, kita cukup cek apakah sudah lewat
+                        $isPastExpiresAt = $session->expires_at && $session->expires_at->isPast();
+
+                        if ($isPastEndTime || $isPastExpiresAt) {
+                            // Tentukan waktu selesai yang paling akurat
+                            // Jika karena durasi habis, pakai expires_at. Jika karena jadwal ditutup, pakai now.
+                            $finishedAt = ($isPastExpiresAt) ? $session->expires_at : $now;
+
+                            $session->update([
+                                'status' => ExamSessionStatus::COMPLETED,
+                                'finished_at' => $finishedAt,
+                                'token' => null,
+                                'system_id' => null,
+                            ]);
+                        }
+                    });
+                } catch (\Exception $e) {
+                    $this->error("Gagal memproses sesi ID: {$session->id}. Error: {$e->getMessage()}");
+                }
+            });
+
+        $this->info("Proses pembersihan selesai.");
     }
 }

@@ -5,11 +5,14 @@ namespace App\Filament\Resources;
 use App\Enums\ExamSessionStatus;
 use App\Enums\ExamStatus;
 use App\Filament\Resources\ExamResource\Pages;
+use App\Helpers\ExamTimeHelper;
 use App\Models\Exam;
 use App\Models\ExamCategory;
 use App\Models\Subject;
+use Carbon\Carbon;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -27,6 +30,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 
 class ExamResource extends Resource
 {
@@ -34,7 +38,7 @@ class ExamResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationLabel = 'Daftar Ujian';
-
+    protected static ?string $modelLabel = 'Ujian';
     protected static ?string $pluralModelLabel = 'Daftar Ujian';
 
     protected static ?string $navigationGroup = 'Manajemen Ujian';
@@ -71,7 +75,7 @@ class ExamResource extends Resource
                                     ->required()
                                     ->placeholder('Contoh: UTS Matematika Gasal'),
                                 TextInput::make('duration')
-                                    ->label('Durasi (Menit)')
+                                    ->label('Durasi Awal (Menit)')
                                     ->numeric()
                                     ->suffix('Menit')
                                     ->required(),
@@ -162,7 +166,7 @@ class ExamResource extends Resource
                             ]),
                     ])->columnSpanFull(),
             ])
-            ->disabled(fn(?Exam $record) => $record?->status === ExamStatus::CLOSED);
+            ->disabled(fn(?Exam $record) => $record?->status !== ExamStatus::DRAFT);
     }
 
     protected static function updateTitle(Set $set, Get $get): void
@@ -220,15 +224,15 @@ class ExamResource extends Resource
 
                         return $start->translatedFormat('d M Y, H:i T');
                     })
-                    ->description(function (Exam $record): \Illuminate\Support\HtmlString {
+                    ->description(function (Exam $record): HtmlString {
                         $start = $record->start_time;
                         $end = $record->end_time;
 
                         if (!$start || !$end)
-                            return new \Illuminate\Support\HtmlString('');
+                            return new HtmlString('');
 
                         if ($start->isSameDay($end)) {
-                            return new \Illuminate\Support\HtmlString("
+                            return new HtmlString("
                                 <div class='flex items-center gap-1 text-primary-600 font-medium text-xs mt-0.5'>
                                     <svg class='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>
                                     <span>{$start->format('H:i')} — {$end->format('H:i T')}</span>
@@ -236,7 +240,7 @@ class ExamResource extends Resource
                             ");
                         }
 
-                        return new \Illuminate\Support\HtmlString("
+                        return new HtmlString("
                             <div class='text-gray-500 text-xs mt-0.5'>
                                 Selesai: <span class='text-gray-500'>{$end->translatedFormat('d M Y, H:i T')}</span>
                             </div>
@@ -244,9 +248,24 @@ class ExamResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('duration')
-                    ->label('Durasi')
+                    ->label('Durasi (Menit)')
+                    ->getStateUsing(function (Exam $record) {
+                        // Durasi Asli + Total Tambahan di log Exam
+                        $additional = collect($record->extension_log ?? [])->sum('minutes');
+                        return $record->duration + $additional;
+                    })
                     ->numeric()
-                    ->suffix(' Menit')
+                    ->badge()
+                    ->color(fn($record) => collect($record->extension_log ?? [])->isNotEmpty() ? 'danger' : 'warning')
+                    ->description(function (Exam $record) {
+                        $additional = collect($record->extension_log ?? [])->sum('minutes');
+                        if ($additional <= 0)
+                            return null;
+
+                        return new HtmlString(
+                            "<span class='text-xs text-success-600 font-medium'>Asli: {$record->duration}m (+{$additional}m)</span>"
+                        );
+                    })
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('total_soal')
@@ -256,8 +275,8 @@ class ExamResource extends Resource
                     ->badge()
                     ->color('success')
                     ->icon('heroicon-s-circle-stack')
-                    ->description(function (Exam $record): \Illuminate\Support\HtmlString {
-                        return new \Illuminate\Support\HtmlString("
+                    ->description(function (Exam $record): HtmlString {
+                        return new HtmlString("
                             <div class='flex gap-1.5 mt-1 text-[10px] font-bold uppercase tracking-tighter'>
                                 <span class='text-emerald-600'>PG: {$record->pg_count}</span>
                                 <span class='text-gray-300'>|</span>
@@ -337,12 +356,31 @@ class ExamResource extends Resource
                                     $record->status !== ExamStatus::DRAFT && $get('status') !== ExamStatus::DRAFT->value
                                 )
                                 ->placeholder('Masukkan angka menit...'),
+                            TextInput::make('reason')
+                                ->label('Alasan Penambahan Waktu')
+                                ->hint('Opsional')
+                                ->visible(
+                                    fn(Get $get, Exam $record) =>
+                                    $record->status !== ExamStatus::DRAFT && $get('status') !== ExamStatus::DRAFT->value
+                                )
+                                ->placeholder('Tidak Ada Alasan'),
                         ])
                         ->action(fn(Exam $record, array $data) => self::handleStatusUpdate($record, $data)),
-
+                    Tables\Actions\Action::make('viewExtensions')
+                        ->label('Riwayat Tambahan Waktu')
+                        ->icon('heroicon-m-clock')
+                        ->color('warning')
+                        ->modalHeading('Riwayat Tambahan Waktu')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup')
+                        ->form(fn(Exam $record) => [
+                            Placeholder::make('extension_logs')
+                                ->label('')
+                                ->content(new HtmlString(static::buildExtensionLogHtml($record))),
+                        ]),
                     Tables\Actions\EditAction::make()
-                        ->icon(fn($record) => $record->status === ExamStatus::CLOSED ? 'heroicon-m-lock-closed' : 'heroicon-m-pencil-square')
-                        ->label(fn($record) => $record->status === ExamStatus::CLOSED ? 'Lihat Detail' : 'Edit'),
+                        ->icon(fn($record) => $record->status !== ExamStatus::DRAFT ? 'heroicon-m-lock-closed' : 'heroicon-m-pencil-square')
+                        ->label(fn($record) => $record->status !== ExamStatus::DRAFT ? 'Lihat Detail' : 'Edit'),
                     Tables\Actions\DeleteAction::make(),
                 ])
                     ->label('Aksi')
@@ -351,6 +389,41 @@ class ExamResource extends Resource
                     ->color('gray')
                     ->button(),
             ]);
+    }
+
+    protected static function buildExtensionLogHtml(Exam $record): string
+    {
+        $record->refresh();
+        $logs = $record->extension_log ?? [];
+
+        if (empty($logs)) {
+            return '<div class="text-sm text-gray-500 italic text-center py-4">Belum ada riwayat tambahan waktu untuk peserta ini.</div>';
+        }
+
+        $html = "<div class='space-y-3'>";
+        foreach (array_reverse($logs) as $log) {
+            $time = Carbon::parse($log['at'])->format('d/m/Y H:i T');
+            $minutes = $log['minutes'] ?? 0;
+            $admin = $log['by'] ?? 'System';
+            $reason = $log['reason'] ?? 'Tidak ada alasan';
+
+            $html .= "
+                <div class='p-3 bg-white border border-gray-200 rounded-lg shadow-sm'>
+                    <div class='flex justify-between items-start mb-2'>
+                        <span class='px-2 py-1 bg-success-50 text-success-700 text-xs font-bold rounded'>+{$minutes} Menit</span>
+                        <span class='text-[10px] text-gray-400 font-mono'>$time</span>
+                    </div>
+                    <div class='text-xs text-gray-600 mb-1'>
+                        <span class='font-semibold text-gray-800'>Oleh:</span> $admin
+                    </div>
+                    <div class='text-xs text-gray-500 italic'>
+                        \"$reason\"
+                    </div>
+                </div>";
+        }
+        $html .= "</div>";
+
+        return $html;
     }
 
     protected static function handleStatusUpdate(Exam $record, array $data): void
@@ -393,23 +466,13 @@ class ExamResource extends Resource
         }
 
         // 4. Proses Database dengan Transaction
-        DB::transaction(function () use ($record, $newStatus, $additionalMinutes) {
+        DB::transaction(function () use ($record, $newStatus, $additionalMinutes, $data) {
             $messageSuffix = "";
 
             // Logika Penambahan Waktu
             if ($additionalMinutes > 0) {
-                $baseEndTime = $record->end_time->isPast() ? now() : $record->end_time;
-                $record->end_time = $baseEndTime->addMinutes($additionalMinutes);
-                $record->duration += $additionalMinutes;
-
-                // Otomatis aktifkan jika menambah waktu
+                ExamTimeHelper::extendAllSessions($record, $additionalMinutes, $data['reason']);
                 $record->status = ExamStatus::ACTIVE;
-
-                // Hanya update sesi yang belum selesai
-                $record->sessions()
-                    ->where('status', '!=', ExamSessionStatus::COMPLETED)
-                    ->increment('remaining_duration', $additionalMinutes * 60);
-
                 $messageSuffix = " Serta sisa waktu semua peserta bertambah {$additionalMinutes} menit.";
             } else {
                 $record->status = $newStatus;

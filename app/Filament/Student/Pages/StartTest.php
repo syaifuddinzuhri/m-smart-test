@@ -72,17 +72,9 @@ class StartTest extends Page implements HasForms, HasActions
         if ($this->totalPG === 0 && $this->totalEssay > 0)
             $this->activeTab = 'essay';
 
-        $now = now();
-        $examEndTime = $this->exam->end_time;
-        $remainingUntilEnd = $now->diffInSeconds($examEndTime, false);
-
-        if ($remainingUntilEnd <= 0) {
-            Notification::make()->title('Ujian Telah Berakhir')->danger()->send();
-            return redirect()->to('/student');
-        }
-
-        // Sisa waktu sebenarnya adalah yang terkecil antara jatah durasi vs jadwal selesai
-        $this->durationInSeconds = min($this->session->remaining_duration, $remainingUntilEnd);
+        $redirect = $this->syncAndValidateTimer();
+        if ($redirect)
+            return $redirect;
 
         // Load Initial Data
         $savedAnswers = ExamAnswer::where('exam_session_id', $this->session->id)->with('selectedOptions')->get();
@@ -127,26 +119,26 @@ class StartTest extends Page implements HasForms, HasActions
         $this->isLocked = true;
     }
 
-    public function updateRemainingTime($clientSeconds): int
+    public function updateRemainingTime(): int
     {
         if ($this->session) {
             $this->session->refresh();
+            $now = now();
+            // Deadline pengerjaan (jatah individu)
+            $deadline = $this->session->expires_at;
+            // Deadline jadwal (gerbang global)
+            $globalLimit = $this->exam->end_time;
 
-            // JIKA waktu di DB jauh lebih besar dari yang dikirim client (misal selisih > 10 detik)
-            // Artinya Admin baru saja menambah waktu secara massal.
-            if ($this->session->remaining_duration > ($clientSeconds + 10)) {
-                // Jangan update DB, cukup kembalikan waktu dari DB ke browser siswa
-                return $this->session->remaining_duration;
-            }
+            // Ambil mana yang lebih dulu habis
+            $target = $deadline->min($globalLimit);
 
-            // Jika normal, baru update DB
-            $this->session->update([
-                'remaining_duration' => $clientSeconds,
-                'last_activity' => now(),
-            ]);
+            $serverRemaining = $now->diffInSeconds($target, false);
+            $actualRemaining = max(0, (int) $serverRemaining);
+
+            return $actualRemaining;
         }
 
-        return $clientSeconds;
+        return 0;
     }
 
     public function timeOut(): void

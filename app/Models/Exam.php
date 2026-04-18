@@ -22,6 +22,7 @@ class Exam extends Model
         'can_resume' => 'boolean',
         'is_graded' => 'boolean',
         'show_result_to_student' => 'boolean',
+        'extension_log' => 'array',
     ];
 
     protected static function boot()
@@ -30,14 +31,15 @@ class Exam extends Model
 
         static::deleting(function ($exam) {
             $exam->classrooms()->detach();
+            $exam->questions()->detach();
             $exam->tokens()->delete();
-            $exam->questions()->delete();
             $exam->sessions->each(function ($session) {
                 $session->answers->each(function ($answer) {
-                    $answer->options()->delete();
+                    if (method_exists($answer, 'selectedOptions')) {
+                        $answer->selectedOptions()->detach();
+                    }
                     $answer->delete();
                 });
-                $session->answers()->delete();
                 $session->delete();
             });
         });

@@ -182,13 +182,12 @@
                     if (this.remaining > 0) {
                         this.remaining--;
 
-                        // SINKRONISASI SETIAP 30 DETIK
-                        if (this.lastSync - this.remaining >= 30) {
-                            // Kirim ke server dan dapatkan durasi 'resmi' dari server
-                            const serverDuration = await @this.updateRemainingTime(this
-                                .remaining);
+                        // SINKRONISASI SETIAP 5 DETIK
+                        if (this.lastSync - this.remaining >= 5) {
+                            // Client memanggil server: "Berapa sisa waktu saya yang benar?"
+                            // Ini otomatis menangani penambahan waktu oleh Admin
+                            const serverDuration = await @this.updateRemainingTime();
 
-                            // Update timer lokal dengan data server (menangani penambahan waktu admin)
                             this.remaining = serverDuration;
                             this.lastSync = serverDuration;
                         }
@@ -210,6 +209,8 @@
             },
 
             formatTime(seconds) {
+                seconds = Math.floor(seconds);
+
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor((seconds % 3600) / 60);
                 const s = seconds % 60;
