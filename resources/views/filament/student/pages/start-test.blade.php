@@ -5,8 +5,26 @@
             if (!this.isLocked) {
                 $wire.call('lockExam');
             }
+        },
+        checkFullscreen() {
+            checkFullscreen() {
+                // Cek apakah ini perangkat mobile iOS
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+                if (isIOS) {
+                    // Di iOS, kita tidak bisa paksa Fullscreen,
+                    // jadi kita andalkan visibilitychange (pindah tab/minimize)
+                    return;
+                }
+
+                // Untuk Android & Desktop, tetap paksa Fullscreen
+                if (!document.fullscreenElement && !this.isLocked) {
+                    this.lockExam();
+                }
+            }
         }
     }" @visibilitychange.window="if (document.hidden) lockExam()" @blur.window="lockExam()"
+        @fullscreenchange.window="checkFullscreen()"
         @keydown.window="
         if ($event.keyCode == 123 || ($event.ctrlKey && $event.shiftKey && $event.keyCode == 73) || ($event.ctrlKey && $event.keyCode == 85) || $event.metaKey) {
             lockExam();
@@ -54,7 +72,7 @@
                         </x-filament::button>
 
                         <p class="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-black mt-6">
-                            Security Protocol — System ID: {{ generate_exam_system_id(auth()->id(), $exam_id) }}
+                            Security Protocol — System ID: {{ $session->system_id }}
                         </p>
                     </div>
                 </div>
@@ -63,7 +81,64 @@
 
         <div style="{{ $isLocked ? 'filter: blur(40px); pointer-events: none; user-select: none; opacity: 0.1;' : '' }}"
             class="transition-all duration-1000">
+            <div x-data="{ showOverlay: true }" x-show="showOverlay" @click="triggerFullScreen(); showOverlay = false"
+                class="fixed inset-0 z-[999999] bg-white/10 backdrop-blur-[2px] flex items-center justify-center cursor-pointer">
+                <div class="bg-primary-600 text-white px-6 py-3 rounded-full font-bold animate-bounce shadow-2xl">
+                    Klik Layar untuk Memulai Ujian
+                </div>
+            </div>
             @include('filament.student.pages.parts.exam-content')
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            const triggerFullScreen = () => {
+                const elem = document.documentElement;
+                const rfs = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen;
+                if (rfs) {
+                    rfs.call(elem).catch(err => {
+                        console.warn(`Error attempting to enable full-screen mode: ${err.message}`);
+                    });
+                }
+            };
+
+            // Fungsi untuk memaksa fullscreen di interaksi pertama apa pun
+            const forceStart = () => {
+                triggerFullScreen();
+                // Hapus event listener setelah berhasil agar tidak mengganggu performa
+                ['click', 'keydown', 'touchstart'].forEach(event => {
+                    document.removeEventListener(event, forceStart);
+                });
+            };
+
+            // Pasang listener pada hampir semua interaksi awal
+            document.addEventListener('click', () => {
+                if (!document.fullscreenElement && !@js($isLocked)) {
+                    triggerFullScreen();
+                }
+            }, {
+                once: true
+            });
+            document.addEventListener('keydown', forceStart);
+            document.addEventListener('touchstart', forceStart);
+
+            // Deteksi perubahan fullscreen
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    // Jika keluar fullscreen, cek apakah halaman sedang terkunci atau tidak
+                    // Jika tidak terkunci, paksa kunci lewat Livewire
+                    @this.call('lockExam');
+                }
+            });
+
+            // Tambahan: Auto-focus jika user kembali ke tab ini
+            window.addEventListener('focus', () => {
+                if (!document.fullscreenElement && !@js($isLocked)) {
+                    // Memberi peringatan halus atau langsung kunci
+                    console.log('User returned to tab');
+                }
+            });
+        </script>
+    @endpush
 </x-filament-panels::page>

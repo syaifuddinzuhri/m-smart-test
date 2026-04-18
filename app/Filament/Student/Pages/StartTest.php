@@ -2,6 +2,9 @@
 
 namespace App\Filament\Student\Pages;
 
+use App\Enums\ExamSessionStatus;
+use App\Models\Exam;
+use App\Models\ExamSession;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -24,44 +27,85 @@ class StartTest extends Page implements HasForms, HasActions
 
     protected static ?string $title = 'Simulasi Ujian Online';
 
-    public $exam_id;
+    protected static string $view = 'filament.student.pages.start-test';
 
-    // State Navigasi
-    public $activeTab = 'pg'; // 'pg' atau 'essay'
+    public $activeTab = 'pg';
     public $currentStep = 1;
-    public $totalPG = 10; // Contoh ada 3 soal PG
-    public $totalEssay = 2; // Contoh ada 2 soal Essay
+    public $totalPG = 10;
+    public $totalEssay = 2;
 
     public ?array $data = [];
 
     public $doubtfulQuestions = [];
-    public $durationInSeconds = 3600;
+    public $durationInSeconds = 0;
 
-    protected static string $view = 'filament.student.pages.start-test';
+    public bool $isLocked = false;
 
-    public function mount(): void
+    public ?string $token = null;
+
+    public ?Exam $exam = null;
+    public ?ExamSession $session = null;
+
+    public function getHeader(): ?\Illuminate\Contracts\View\View
     {
-        $this->exam_id = request()->query('exam_id');
+        return view('filament.student.components.hide-nav-css');
+    }
 
-        // Logika mengambil durasi dari database (Contoh)
-        // $exam = Exam::find($this->exam_id);
-        // $this->durationInSeconds = $exam->duration * 60;
+    public function mount()
+    {
+        $this->token = request()->query('token');
+
+        if (!$this->token) {
+            return redirect()->to('/student');
+        }
+
+        $tokenHash = hash('sha256', $this->token);
+
+        $this->session = ExamSession::where('token', $tokenHash)
+            ->first();
+
+        if (!$this->session) {
+            return redirect()->to('/student');
+        }
+
+        $this->exam = Exam::find($this->session->exam_id);
+
+        if (!$this->exam) {
+            return redirect()->to('/student');
+        }
+
+        if ($this->session->status === ExamSessionStatus::PAUSE) {
+            $this->isLocked = true;
+        }
+
+        if ($this->session) {
+            $this->durationInSeconds = $this->session->remaining_duration;
+        } else {
+            $this->durationInSeconds = $this->exam->duration * 60;
+        }
 
         $this->form->fill();
     }
 
-    public bool $isLocked = false;
-
-    // Method untuk mengunci ujian
     public function lockExam(): void
     {
-        // if (config('app.env') === 'local')
-        //     return;
-
+        $updateData = [
+            'status' => ExamSessionStatus::PAUSE->value,
+            'last_violation_at' => now(),
+            'violation_count' => ($this->exam->violation_count ?? 0) + 1,
+        ];
+        $this->session->update($updateData);
         $this->isLocked = true;
+        $this->dispatch('exit-fullscreen');
+    }
 
-        // Nanti di sini tambahkan logic database:
-        // ExamSession::where('user_id', auth()->id())->update(['is_locked' => true]);
+    public function updateRemainingTime($seconds): void
+    {
+        if ($this->session) {
+            $this->session->update([
+                'remaining_duration' => $seconds
+            ]);
+        }
     }
 
     public function timeOut(): void
@@ -74,9 +118,14 @@ class StartTest extends Page implements HasForms, HasActions
             ->send();
     }
 
-    public function backToDashboard(): void
+    public function backToDashboard()
     {
-        redirect()->to('/student/input-token?exam_id=' . $this->exam_id);
+        $updateData = [
+            'token' => null,
+            'system_id' => null
+        ];
+        $this->session->update($updateData);
+        return redirect()->to('/student/input-token?exam_id=' . $this->exam->id);
     }
 
     public function toggleDoubt($key)

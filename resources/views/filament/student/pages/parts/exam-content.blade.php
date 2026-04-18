@@ -14,7 +14,7 @@
                 'bg-white shadow text-primary-600' => $activeTab === 'essay',
                 'text-gray-500 hover:text-gray-700' => $activeTab !== 'essay',
             ])>
-                Essay / Isian ({{ $totalEssay }})
+                Jawaban Singkat / Essay ({{ $totalEssay }})
             </button>
         </div>
 
@@ -146,27 +146,22 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('timerHandler', (initialSeconds) => ({
             remaining: initialSeconds,
-            interval: null,
-            storageKey: 'exam_end_time_' + @js($exam_id),
+            lastSync: initialSeconds,
 
             initTimer() {
-                let endTime = localStorage.getItem(this.storageKey);
-
-                if (!endTime) {
-                    // Jika belum ada di storage, buat waktu akhir baru
-                    endTime = new Date().getTime() + (this.remaining * 1000);
-                    localStorage.setItem(this.storageKey, endTime);
-                }
-
                 this.interval = setInterval(() => {
-                    const now = new Date().getTime();
-                    const dist = endTime - now;
-                    this.remaining = Math.max(0, Math.floor(dist / 1000));
+                    if (this.remaining > 0) {
+                        this.remaining--;
 
-                    if (this.remaining <= 0) {
+                        // SINKRONISASI KE DATABASE SETIAP 30 DETIK
+                        // Agar jika siswa pindah HP, waktunya tidak reset ke awal
+                        if (this.lastSync - this.remaining >= 30) {
+                            @this.updateRemainingTime(this.remaining);
+                            this.lastSync = this.remaining;
+                        }
+                    } else {
                         clearInterval(this.interval);
-                        localStorage.removeItem(this.storageKey);
-                        @this.timeOut(); // Panggil method di Livewire
+                        @this.timeOut();
                     }
                 }, 1000);
             },
@@ -175,7 +170,7 @@
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor((seconds % 3600) / 60);
                 const s = seconds % 60;
-                return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
         }))
     });

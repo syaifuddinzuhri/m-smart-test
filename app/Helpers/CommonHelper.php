@@ -4,9 +4,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 if (!function_exists('generate_exam_system_id')) {
-    function generate_exam_system_id($userId, $examId)
+    function generate_exam_system_id($token)
     {
-        return strtoupper(substr(md5($userId . $examId), 0, 12));
+        $id = strtoupper(substr($token, 0, 12));
+        return 'EXAM-' . substr($id, 0, 4) . '-' . substr($id, 4, 4) . '-' . substr($id, 8, 4);
     }
 }
 

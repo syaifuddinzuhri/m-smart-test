@@ -29,18 +29,13 @@ class ClearExpiredExamTokens extends Command
         $bufferMinutes = 1;
         $threshold = now()->subMinutes($bufferMinutes);
 
-        /**
-         * Logika Penghapusan:
-         * 1. Hapus jika expired_at sudah lewat dari 1 menit yang lalu.
-         * 2. Hapus jika token single_use dan used_at sudah lewat dari 1 menit yang lalu.
-         */
         $deletedCount = ExamToken::query()
             ->where(function ($query) use ($threshold) {
                 $query->where('expired_at', '<', $threshold) // Kasus: Waktu habis
                     ->orWhere(function ($subQuery) use ($threshold) {
-                        $subQuery->where('is_single_use', true)
-                            ->where('used_at', '<', $threshold);
-                    });
+                        $subQuery->where('is_single_use', true);
+                    })
+                    ->where('used_at', '<', $threshold);
             })
             ->delete();
 

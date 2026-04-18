@@ -19,6 +19,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Manusgi Smart Test">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <meta name="theme-color" content="#ffffff">
 
@@ -78,5 +80,9 @@
     mark {
         background-color: yellow;
         color: black;
+    }
+
+    body {
+        overscroll-behavior-y: !contain;
     }
 </style>

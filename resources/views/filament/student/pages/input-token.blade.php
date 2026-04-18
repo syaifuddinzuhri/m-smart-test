@@ -13,18 +13,20 @@
                             Verifikasi Akses
                         </h1>
                     </div>
-                    <p class="text-sm text-gray-500 font-medium">Silahkan masukkan token yang diberikan oleh pengawas untuk membuka soal.</p>
+                    <p class="text-sm text-gray-500 font-medium">Silahkan masukkan token yang diberikan oleh pengawas
+                        untuk membuka soal.</p>
                 </div>
 
                 <div class="p-6">
+                    <p class="text-sm uppercase mb-4 text-center font-black text-gray-600">{{ $record->title }}</p>
                     <div class="grid grid-cols-2 gap-4 mb-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                         <div class="space-y-1">
                             <p class="text-[10px] uppercase font-black text-gray-400 tracking-widest">Mata Pelajaran</p>
-                            <p class="text-sm font-bold text-gray-800 italic">Matematika</p>
+                            <p class="text-sm font-bold text-gray-800 italic">{{ $record->subject?->name }}</p>
                         </div>
                         <div class="space-y-1 border-l border-gray-200 pl-4">
                             <p class="text-[10px] uppercase font-black text-gray-400 tracking-widest">Kategori</p>
-                            <p class="text-sm font-bold text-gray-800 italic">Ujian Akhir Semester</p>
+                            <p class="text-sm font-bold text-gray-800 italic">{{ $record->category?->name }}</p>
                         </div>
                     </div>
 
@@ -58,7 +60,8 @@
             </div>
 
             <p class="mt-6 text-center text-xs text-gray-400 px-6">
-                Pastikan Anda tidak membagikan token ini kepada siapapun. Sistem mencatat alamat IP dan ID perangkat Anda saat token divalidasi.
+                Pastikan Anda tidak membagikan token ini kepada siapapun. Sistem mencatat alamat IP dan ID perangkat
+                Anda saat token divalidasi.
             </p>
 
         </div>
