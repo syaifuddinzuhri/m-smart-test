@@ -53,25 +53,30 @@ class Login extends BaseLogin
             $lifetime = config('session.lifetime') * 60;
             $threshold = time() - $lifetime;
 
+            \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('last_activity', '<', $threshold)
+                ->delete();
+
             $activeSession = \Illuminate\Support\Facades\DB::table('sessions')
                 ->where('user_id', $user->id)
-                ->where('last_activity', '>', $threshold)
-                ->exists();
+                ->first();
 
             if ($activeSession) {
-                \Filament\Notifications\Notification::make()
-                    ->title('Gagal Login')
-                    ->body('Akun Anda sedang aktif di perangkat lain. Silakan hubungi Admin untuk reset sesi.')
-                    ->danger()
-                    ->send();
+                $isSameDevice = ($activeSession->ip_address === request()->ip() &&
+                    $activeSession->user_agent === request()->userAgent());
 
-                return null;
+                if ($isSameDevice) {
+                    \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+                } else {
+                    \Filament\Notifications\Notification::make()
+                        ->title('Gagal Login')
+                        ->body('Akun Anda sedang aktif di perangkat lain. Silakan hubungi Admin untuk reset sesi.')
+                        ->danger()
+                        ->send();
+
+                    return null;
+                }
             }
-
-            \Illuminate\Support\Facades\DB::table('sessions')
-                ->where('user_id', $user->id)
-                ->orWhere('last_activity', '<', $threshold)
-                ->delete();
         }
 
         if ($panelId === PanelType::STUDENT->value && $role !== UserRole::STUDENT->value)
