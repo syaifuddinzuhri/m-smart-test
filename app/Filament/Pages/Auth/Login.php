@@ -50,8 +50,12 @@ class Login extends BaseLogin
         $role = $user->role->value;
 
         if ($role === UserRole::STUDENT->value) {
+            $lifetime = config('session.lifetime') * 60;
+            $threshold = time() - $lifetime;
+
             $activeSession = \Illuminate\Support\Facades\DB::table('sessions')
                 ->where('user_id', $user->id)
+                ->where('last_activity', '>', $threshold)
                 ->exists();
 
             if ($activeSession) {
@@ -63,6 +67,11 @@ class Login extends BaseLogin
 
                 return null;
             }
+
+            \Illuminate\Support\Facades\DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->orWhere('last_activity', '<', $threshold)
+                ->delete();
         }
 
         if ($panelId === PanelType::STUDENT->value && $role !== UserRole::STUDENT->value)
