@@ -106,6 +106,7 @@ trait HasExamStorage
     }
     public function saveAnswer($questionId = null, $moveNext = false)
     {
+        // 1. Validasi Waktu dan Sesi
         $this->syncAndValidateTimer();
 
         if ($this->durationInSeconds <= 0) {
@@ -121,10 +122,11 @@ trait HasExamStorage
         if (!$questionId)
             return;
 
-        $type = ($questionId === $this->currentQuestionId)
-            ? $this->currentQuestion->question_type
-            : Question::where('id', $questionId)->value('question_type');
+        // 2. Ambil Meta Data Soal
+        $q = Question::find($questionId);
+        $type = $q->question_type;
 
+        // 3. Ambil Input Data
         $answerValue = $this->data["q{$questionId}"] ?? null;
         $isDoubtful = in_array($questionId, $this->doubtfulQuestions);
         $isAnswerEmpty = is_array($answerValue)
@@ -133,12 +135,43 @@ trait HasExamStorage
 
         $examService = app(\App\Services\ExamService::class);
 
-        if ($isAnswerEmpty && !$isDoubtful) {
-            ExamAnswer::where('exam_session_id', $this->session->id)->where('question_id', $questionId)->delete();
-            // Tetap sync meskipun dihapus (untuk update poin null)
-            $examService->syncSessionScores($this->session);
+        // 4. Dapatkan "Skor Lama" sebelum perubahan
+        // Ini penting untuk menghitung selisih (diff)
+        $oldAnswer = ExamAnswer::where('exam_session_id', $this->session->id)
+            ->where('question_id', $questionId)
+            ->first();
+
+        if (!$oldAnswer) {
+            // Jika belum pernah dijawab, status siswa saat ini adalah dapet "Point Null"
+            $oldScore = match (true) {
+                $q->isPg() => (float) $this->exam->point_pg_null,
+                $q->isShortAnswer() => (float) $this->exam->point_short_answer_null,
+                default => (float) $this->exam->point_essay_null
+            };
         } else {
-            DB::transaction(function () use ($questionId, $answerValue, $type, $isDoubtful, $examService) {
+            $oldScore = (float) $oldAnswer->score;
+        }
+
+        // 5. Proses Transaksi Penilaian
+        DB::transaction(function () use ($questionId, $answerValue, $type, $isDoubtful, $examService, $isAnswerEmpty, $oldScore, $q) {
+
+            $newScore = 0;
+
+            // CASE A: Jawaban dikosongkan (dan tidak ragu-ragu) -> Kembali ke Point Null
+            if ($isAnswerEmpty && !$isDoubtful) {
+                $newScore = match (true) {
+                    $q->isPg() => (float) $this->exam->point_pg_null,
+                    $q->isShortAnswer() => (float) $this->exam->point_short_answer_null,
+                    default => (float) $this->exam->point_essay_null
+                };
+
+                ExamAnswer::where('exam_session_id', $this->session->id)
+                    ->where('question_id', $questionId)
+                    ->delete();
+            }
+
+            // CASE B: Ada jawaban atau status ragu-ragu
+            else {
                 $answer = ExamAnswer::updateOrCreate(
                     ['exam_session_id' => $this->session->id, 'question_id' => $questionId],
                     [
@@ -147,20 +180,34 @@ trait HasExamStorage
                     ]
                 );
 
-                if (in_array($type, [QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE, QuestionType::TRUE_FALSE])) {
+                // Sync pilihan jika PG
+                if ($q->isPg()) {
                     $optionIds = is_array($answerValue) ? $answerValue : ($answerValue ? [$answerValue] : []);
                     $answer->selectedOptions()->sync($optionIds);
                 }
 
-                // HITUNG SKOR JAWABAN INI
-                $examService->gradeAnswer($answer);
+                // Hitung skor berdasarkan jawaban terbaru
+                $calculated = $examService->calculateScore($answer);
 
-                // UPDATE TOTAL KE SESSION
-                $examService->syncSessionScores($this->session);
-            });
-        }
+                // Jika essay dan belum dinilai (calculateScore return null), gunakan point_essay_null
+                $newScore = $calculated ?? (float) $this->exam->point_essay_null;
 
-        // Navigasi HANYA jika diperintahkan (Tombol Simpan & Lanjutkan)
+                // Update record jawaban
+                $updateData = ['score' => $newScore];
+
+                // Hanya update is_correct jika BUKAN essay (biar essay tetap null)
+                if (!$q->isEssay()) {
+                    $updateData['is_correct'] = $newScore > 0;
+                }
+
+                $answer->update($updateData);
+            }
+
+            // 6. Update Sesi secara Incremental (SANGAT CEPAT)
+            $examService->updateIncrementalScore($this->session, $type, $oldScore, $newScore);
+        });
+
+        // 7. Navigasi
         if ($moveNext) {
             $this->next();
         }

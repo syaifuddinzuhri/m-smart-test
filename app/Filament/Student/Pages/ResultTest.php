@@ -2,6 +2,9 @@
 
 namespace App\Filament\Student\Pages;
 
+use App\Enums\ExamSessionStatus;
+use App\Models\Exam;
+use App\Models\ExamSession;
 use Filament\Pages\Page;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -12,6 +15,7 @@ use Filament\Tables\Columns\Layout\Split;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\Auth;
 
 class ResultTest extends Page implements HasTable
 {
@@ -25,10 +29,29 @@ class ResultTest extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $userId = Auth::user()->id;
+
         return $table
             ->query(
-                \App\Models\User::query()
+                Exam::query()
+                    ->whereHas('sessions', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)
+                            ->where('status', ExamSessionStatus::COMPLETED);
+                    })
+                    ->addSelect([
+                        'finished_at' => ExamSession::select('finished_at')
+                            ->whereColumn('exam_id', 'exams.id')
+                            ->where('user_id', $userId)
+                            ->latest()
+                            ->take(1),
+                    ])
+                    ->with([
+                        'sessions' => function ($query) use ($userId) {
+                            $query->where('user_id', $userId);
+                        }
+                    ])
             )
+            ->defaultSort('finished_at')
             ->searchable()
             ->filters([
                 SelectFilter::make('mapel')
@@ -52,34 +75,7 @@ class ResultTest extends Page implements HasTable
                         'tidak_lulus' => 'Tidak Lulus',
                     ]),
             ])
-            ->columns([
-                Stack::make([
-                    TextColumn::make('judul_ujian')
-                        ->label('Judul')
-                        ->default('Ujian Akhir Semester - Bahasa Indonesia')
-                        ->weight(FontWeight::Bold)
-                        ->size(TextColumn\TextColumnSize::Large),
-
-                    TextColumn::make('tanggal')
-                        ->default('Selesai pada: 12 April 2026')
-                        ->size(TextColumn\TextColumnSize::ExtraSmall)
-                        ->color('gray')
-                        ->icon('heroicon-m-calendar-days'),
-
-                    Split::make([
-                        TextColumn::make('nilai')
-                            ->getStateUsing(fn() => 'Skor: 85/100')
-                            ->badge()
-                            ->color('success')
-                            ->weight(FontWeight::Black),
-
-                        TextColumn::make('status')
-                            ->default('LULUS')
-                            ->badge()
-                            ->color('success'),
-                    ])->extraAttributes(['class' => 'mt-3 mb-2']),
-                ])->space(2),
-            ])
+            ->columns(self::buildColumns())
             ->actions([
                 Action::make('detail')
                     ->label('Lihat Detail')
@@ -89,5 +85,37 @@ class ResultTest extends Page implements HasTable
                     ->extraAttributes(['class' => 'w-full md:w-auto mt-4 justify-center'])
                     ->url(fn($record) => route('filament.student.pages.detail-result-test', ['result_id' => $record->id]))
             ]);
+    }
+
+    protected static function buildColumns()
+    {
+        return [
+            Stack::make([
+                TextColumn::make('judul_ujian')
+                    ->label('Judul')
+                    ->default('Ujian Akhir Semester - Bahasa Indonesia')
+                    ->weight(FontWeight::Bold)
+                    ->size(TextColumn\TextColumnSize::Large),
+
+                TextColumn::make('tanggal')
+                    ->default('Selesai pada: 12 April 2026')
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
+                    ->color('gray')
+                    ->icon('heroicon-m-calendar-days'),
+
+                Split::make([
+                    TextColumn::make('nilai')
+                        ->getStateUsing(fn() => 'Skor: 85/100')
+                        ->badge()
+                        ->color('success')
+                        ->weight(FontWeight::Black),
+
+                    TextColumn::make('status')
+                        ->default('LULUS')
+                        ->badge()
+                        ->color('success'),
+                ])->extraAttributes(['class' => 'mt-3 mb-2']),
+            ])->space(2),
+        ];
     }
 }

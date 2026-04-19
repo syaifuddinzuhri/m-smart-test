@@ -57,8 +57,15 @@ class Exam extends Model
     public function classrooms(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'exam_classrooms')
-            ->using(ExamClassroom::class);
+            ->using(ExamClassroom::class)
+            ->withPivot('min_total_score');
     }
+
+    public function examClassrooms(): HasMany
+    {
+        return $this->hasMany(ExamClassroom::class, 'exam_id');
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(ExamToken::class);

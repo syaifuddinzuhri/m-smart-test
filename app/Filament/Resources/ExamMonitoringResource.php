@@ -88,7 +88,7 @@ class ExamMonitoringResource extends Resource
                         return "+{$total}m";
                     })
                     ->badge()
-                    ->color('success')
+                    ->color('warning')
                     ->description(function (ExamSession $record) {
                         // Menampilkan histori terakhir sebagai hint
                         $lastLog = collect($record->extension_log)->last();
@@ -158,7 +158,7 @@ class ExamMonitoringResource extends Resource
                     ->searchable()
                     ->preload()
                     ->query(function (Builder $query, array $data) {
-                        if ($data['value']) {
+                        if (filled($data['value'] ?? null)) {
                             $query->whereHas('exam', fn($q) => $q->where('exam_category_id', $data['value']));
                         }
                     }),
@@ -173,7 +173,7 @@ class ExamMonitoringResource extends Resource
                     ->searchable()
                     ->preload()
                     ->query(function (Builder $query, array $data) {
-                        if ($data['value']) {
+                        if (filled($data['value'] ?? null)) {
                             $query->whereHas('user.student', fn($q) => $q->where('classroom_id', $data['value']));
                         }
                     }),
@@ -185,7 +185,7 @@ class ExamMonitoringResource extends Resource
                     ->searchable()
                     ->preload()
                     ->query(function (Builder $query, array $data) {
-                        if ($data['value']) {
+                        if (filled($data['value'] ?? null)) {
                             $query->whereHas('exam', fn($q) => $q->where('subject_id', $data['value']));
                         }
                     }),
@@ -194,10 +194,9 @@ class ExamMonitoringResource extends Resource
                 SelectFilter::make('status')
                     ->label('Status Sesi')
                     ->options(ExamSessionStatus::class)
-                    ->multiple() // Mengizinkan pilih banyak sekaligus
                     ->query(function (Builder $query, array $data) {
-                        if ($data['values']) {
-                            $query->whereIn('status', $data['values']);
+                        if (filled($data['value'] ?? null)) {
+                            $query->where('status', $data['value']);
                         }
                     }),
 

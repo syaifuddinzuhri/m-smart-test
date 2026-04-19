@@ -81,4 +81,17 @@ class Question extends Model
         return $this->belongsToMany(Exam::class, 'exam_questions')
             ->withPivot('order');
     }
+
+    public function isPg()
+    {
+        return in_array($this->question_type, [QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE, QuestionType::TRUE_FALSE]);
+    }
+    public function isShortAnswer()
+    {
+        return $this->question_type === QuestionType::SHORT_ANSWER;
+    }
+    public function isEssay()
+    {
+        return $this->question_type === QuestionType::ESSAY;
+    }
 }

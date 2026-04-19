@@ -112,7 +112,7 @@ class StartTest extends Page implements HasForms, HasActions
         ];
 
         $updateData = [
-            'status' => ExamSessionStatus::PAUSE->value,
+            'status' => ExamSessionStatus::PAUSE,
             'last_violation_at' => now(),
             'violation_count' => ($this->exam->violation_count ?? 0) + 1,
             'violation_log' => $logs,
@@ -213,7 +213,7 @@ class StartTest extends Page implements HasForms, HasActions
         $isEssay = in_array($tab, ['essay']);
 
         if ($tab === 'pg') {
-            $input = ($q->question_type === QuestionType::MULTIPLE_CHOICE->value) ? CheckboxList::make($name) : Radio::make($name);
+            $input = ($q->question_type === QuestionType::MULTIPLE_CHOICE) ? CheckboxList::make($name) : Radio::make($name);
             $input->options($q->options->mapWithKeys(function ($opt) {
                 return [
                     $opt->id => new HtmlString(
@@ -222,7 +222,7 @@ class StartTest extends Page implements HasForms, HasActions
                 ];
             })->toArray());
         } else {
-            $input = ($q->question_type === QuestionType::SHORT_ANSWER->value) ? TextInput::make($name) : RichEditor::make($name)
+            $input = ($q->question_type === QuestionType::SHORT_ANSWER) ? TextInput::make($name) : RichEditor::make($name)
                 ->toolbarButtons(['bold', 'italic', 'underline', 'bulletList', 'orderedList']);
         }
 
@@ -235,7 +235,7 @@ class StartTest extends Page implements HasForms, HasActions
                     )
                 ),
             $input->label($isEssay ? 'Jawaban Anda:' : 'Pilih jawaban:')
-                ->extraAttributes(['class' => 'ms-7 mt-4']),
+                ->extraAttributes(['class' => 'mt-4']),
         ])->visible(fn() => $this->activeTab === $tab && $this->currentStep === $step)
             ->key("group_{$tab}_{$q->id}");
     }
@@ -312,16 +312,6 @@ class StartTest extends Page implements HasForms, HasActions
             $isTimeout = true;
         }
 
-        if ($isTimeout) {
-            Notification::make()
-                ->title('Waktu Habis')
-                ->body('Ujian otomatis tersimpan karena waktu telah selesai.')
-                ->warning()
-                ->persistent()
-                ->send();
-            return;
-        }
-
         try {
             DB::transaction(function () {
                 app(ExamService::class)->syncSessionScores($this->session);
@@ -335,17 +325,27 @@ class StartTest extends Page implements HasForms, HasActions
 
             });
 
-            Notification::make()->title('Ujian Berhasil Dikirim')
-                ->body('Terima kasih, jawaban ujian Anda telah kami terima.')
-                ->success()
-                ->send();
+            if ($isTimeout) {
+                Notification::make()
+                    ->title('Waktu Ujian Habis')
+                    ->body('Sesi Anda telah berakhir. Jawaban yang tersimpan telah dikirim otomatis.')
+                    ->warning()
+                    ->persistent()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Ujian Berhasil Dikirim')
+                    ->body('Terima kasih, jawaban ujian Anda telah kami terima.')
+                    ->success()
+                    ->send();
+            }
 
             return redirect()->to('/student');
 
         } catch (Exception $e) {
             Notification::make()
                 ->title('Terjadi kesalahan')
-                ->body($e->getMessage() ?? 'Gagal menyimpan hasil ujian.')
+                ->body('Terjadi kesalahan teknis saat menyimpan: ' . $e->getMessage())
                 ->warning()
                 ->persistent()
                 ->send();

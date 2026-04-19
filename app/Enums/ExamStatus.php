@@ -21,7 +21,7 @@ enum ExamStatus: string implements HasLabel, HasColor, HasIcon
     {
         return match ($this) {
             self::DRAFT => 'Draft (Persiapan)',
-            self::ACTIVE => 'Aktif / Berlangsung',
+            self::ACTIVE => 'Aktif',
             self::INACTIVE => 'Non-Aktif',
             self::CLOSED => 'Sudah Berakhir',
         };

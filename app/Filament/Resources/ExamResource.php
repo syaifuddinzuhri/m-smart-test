@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -94,16 +95,53 @@ class ExamResource extends Resource
                                     ->displayFormat('d/m/Y H:i')
                                     ->format('Y-m-d H:i:00')
                                     ->seconds(false),
+                            ])->columns(2),
 
-                                Select::make('classrooms')
-                                    ->label('Target Kelas')
-                                    ->relationship('classrooms', 'name')
-                                    ->multiple()
-                                    ->preload()
-                                    ->searchable()
-                                    ->required()
-                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name} - {$record->major?->name}")
-                                    ->placeholder('Pilih satu atau lebih kelas...')
+                        Tab::make('Target Peserta')
+                            ->schema([
+                                Repeater::make('examClassrooms')
+                                    ->label('')
+                                    ->schema([
+                                        Select::make('classroom_id')
+                                            ->label('Kelas')
+                                            ->searchable()
+                                            ->preload()
+                                            ->required()
+                                            ->distinct()
+                                            ->options(function ($get, $state) {
+                                                $selected = collect($get('../../examClassrooms') ?? [])
+                                                    ->pluck('classroom_id')
+                                                    ->filter()
+                                                    ->reject(fn($id) => $id === $state);
+
+                                                return \App\Models\Classroom::query()
+                                                    ->whereNotIn('id', $selected)
+                                                    ->get()
+                                                    ->mapWithKeys(fn($item) => [
+                                                        $item->id => "{$item->name} - {$item->major?->name}"
+                                                    ]);
+                                            })
+                                            ->getOptionLabelUsing(function ($value) {
+                                                $classroom = \App\Models\Classroom::with('major')->find($value);
+                                                return $classroom ? "{$classroom->name} - {$classroom->major?->name}" : null;
+                                            }),
+
+                                        TextInput::make('min_total_score')
+                                            ->label('KKM / Minimal Lulus')
+                                            ->numeric()
+                                            ->default(80)
+                                            ->inputMode('numeric')
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->integer()
+                                            ->helperText('Nilai minimal untuk lulus di kelas ini.')
+                                            ->suffix('Poin'),
+                                    ])
+                                    ->columns(2)
+                                    ->minItems(1)
+                                    ->defaultItems(1)
+                                    ->addActionLabel('Tambah Target')
+                                    ->deleteAction(fn($action) => $action->visible(fn($get) => count($get('classrooms') ?? []) > 1))
                                     ->columnSpanFull(),
                             ])->columns(2),
 
@@ -166,7 +204,7 @@ class ExamResource extends Resource
                             ]),
                     ])->columnSpanFull(),
             ])
-            ->disabled(fn(?Exam $record) => $record?->status !== ExamStatus::DRAFT);
+            ->disabled(fn(?Exam $record) => $record && $record?->status !== ExamStatus::DRAFT);
     }
 
     protected static function updateTitle(Set $set, Get $get): void
@@ -189,109 +227,7 @@ class ExamResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Judul Ujian')
-                    ->searchable()
-                    ->description(function (Exam $record): string {
-                        $classrooms = $record->classrooms->map(fn($c) => "{$c->name} {$c->major?->code}");
-
-                        if ($classrooms->count() <= 3) {
-                            return $classrooms->implode(', ');
-                        }
-
-                        $firstThree = $classrooms->take(3)->implode(', ');
-                        $remainingCount = $classrooms->count() - 3;
-
-                        return "{$firstThree} ... (+{$remainingCount} lainnya)";
-                    }),
-
-                Tables\Columns\TextColumn::make('start_time')
-                    ->label('Jadwal Pelaksanaan')
-                    ->icon('heroicon-m-calendar-days')
-                    ->color('gray')
-                    ->weight('medium')
-                    ->formatStateUsing(function (Exam $record) {
-                        $start = $record->start_time;
-                        $end = $record->end_time;
-
-                        if (!$start || !$end)
-                            return '-';
-
-                        if ($start->isSameDay($end)) {
-                            return $start->translatedFormat('d F Y');
-                        }
-
-                        return $start->translatedFormat('d M Y, H:i T');
-                    })
-                    ->description(function (Exam $record): HtmlString {
-                        $start = $record->start_time;
-                        $end = $record->end_time;
-
-                        if (!$start || !$end)
-                            return new HtmlString('');
-
-                        if ($start->isSameDay($end)) {
-                            return new HtmlString("
-                                <div class='flex items-center gap-1 text-primary-600 font-medium text-xs mt-0.5'>
-                                    <svg class='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>
-                                    <span>{$start->format('H:i')} — {$end->format('H:i T')}</span>
-                                </div>
-                            ");
-                        }
-
-                        return new HtmlString("
-                            <div class='text-gray-500 text-xs mt-0.5'>
-                                Selesai: <span class='text-gray-500'>{$end->translatedFormat('d M Y, H:i T')}</span>
-                            </div>
-                        ");
-                    }),
-
-                Tables\Columns\TextColumn::make('duration')
-                    ->label('Durasi (Menit)')
-                    ->getStateUsing(function (Exam $record) {
-                        // Durasi Asli + Total Tambahan di log Exam
-                        $additional = collect($record->extension_log ?? [])->sum('minutes');
-                        return $record->duration + $additional;
-                    })
-                    ->numeric()
-                    ->badge()
-                    ->color(fn($record) => collect($record->extension_log ?? [])->isNotEmpty() ? 'danger' : 'warning')
-                    ->description(function (Exam $record) {
-                        $additional = collect($record->extension_log ?? [])->sum('minutes');
-                        if ($additional <= 0)
-                            return null;
-
-                        return new HtmlString(
-                            "<span class='text-xs text-success-600 font-medium'>Asli: {$record->duration}m (+{$additional}m)</span>"
-                        );
-                    })
-                    ->alignCenter(),
-
-                Tables\Columns\TextColumn::make('total_soal')
-                    ->label('Butir Soal')
-                    ->getStateUsing(fn(Exam $record) => $record->pg_count + $record->short_count + $record->essay_count)
-                    ->weight('bold')
-                    ->badge()
-                    ->color('success')
-                    ->icon('heroicon-s-circle-stack')
-                    ->description(function (Exam $record): HtmlString {
-                        return new HtmlString("
-                            <div class='flex gap-1.5 mt-1 text-[10px] font-bold uppercase tracking-tighter'>
-                                <span class='text-emerald-600'>PG: {$record->pg_count}</span>
-                                <span class='text-gray-300'>|</span>
-                                <span class='text-blue-600'>Skt: {$record->short_count}</span>
-                                <span class='text-gray-300'>|</span>
-                                <span class='text-amber-600'>Esy: {$record->essay_count}</span>
-                            </div>
-                        ");
-                    })
-                    ->alignCenter(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge(),
-            ])
+            ->columns(self::buildColumns())
             ->filters([
                 SelectFilter::make('classrooms')
                     ->label('Filter Kelas')
@@ -389,6 +325,112 @@ class ExamResource extends Resource
                     ->color('gray')
                     ->button(),
             ]);
+    }
+
+    protected static function buildColumns(){
+        return [
+            Tables\Columns\TextColumn::make('title')
+                ->label('Judul Ujian')
+                ->searchable()
+                ->description(function (Exam $record): string {
+                    $classrooms = $record->classrooms->map(fn($c) => "{$c->name} {$c->major?->code}");
+
+                    if ($classrooms->count() <= 3) {
+                        return $classrooms->implode(', ');
+                    }
+
+                    $firstThree = $classrooms->take(3)->implode(', ');
+                    $remainingCount = $classrooms->count() - 3;
+
+                    return "{$firstThree} ... (+{$remainingCount} lainnya)";
+                }),
+
+            Tables\Columns\TextColumn::make('start_time')
+                ->label('Jadwal Pelaksanaan')
+                ->icon('heroicon-m-calendar-days')
+                ->color('gray')
+                ->weight('medium')
+                ->formatStateUsing(function (Exam $record) {
+                    $start = $record->start_time;
+                    $end = $record->end_time;
+
+                    if (!$start || !$end)
+                        return '-';
+
+                    if ($start->isSameDay($end)) {
+                        return $start->translatedFormat('d F Y');
+                    }
+
+                    return $start->translatedFormat('d M Y, H:i T');
+                })
+                ->description(function (Exam $record): HtmlString {
+                    $start = $record->start_time;
+                    $end = $record->end_time;
+
+                    if (!$start || !$end)
+                        return new HtmlString('');
+
+                    if ($start->isSameDay($end)) {
+                        return new HtmlString("
+                            <div class='flex items-center gap-1 text-primary-600 font-medium text-xs mt-0.5'>
+                                <svg class='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>
+                                <span>{$start->format('H:i')} — {$end->format('H:i T')}</span>
+                            </div>
+                        ");
+                    }
+
+                    return new HtmlString("
+                        <div class='text-gray-500 text-xs mt-0.5'>
+                            Selesai: <span class='text-gray-500'>{$end->translatedFormat('d M Y, H:i T')}</span>
+                        </div>
+                    ");
+                }),
+
+            Tables\Columns\TextColumn::make('duration')
+                ->label('Durasi (Menit)')
+                ->getStateUsing(function (Exam $record) {
+                    // Durasi Asli + Total Tambahan di log Exam
+                    $additional = collect($record->extension_log ?? [])->sum('minutes');
+                    return $record->duration + $additional;
+                })
+                ->numeric()
+                ->badge()
+                ->color(fn($record) => collect($record->extension_log ?? [])->isNotEmpty() ? 'danger' : 'warning')
+                ->description(function (Exam $record) {
+                    $additional = collect($record->extension_log ?? [])->sum('minutes');
+                    if ($additional <= 0)
+                        return null;
+
+                    return new HtmlString(
+                        "<span class='text-xs text-success-600 font-medium'>Asli: {$record->duration}m (+{$additional}m)</span>"
+                    );
+                })
+                ->alignCenter(),
+
+            Tables\Columns\TextColumn::make('total_soal')
+                ->label('Butir Soal')
+                ->getStateUsing(fn(Exam $record) => $record->pg_count + $record->short_count + $record->essay_count)
+                ->weight('bold')
+                ->badge()
+                ->color('success')
+                ->icon('heroicon-s-circle-stack')
+                ->description(function (Exam $record): HtmlString {
+                    return new HtmlString("
+                        <div class='flex gap-1.5 mt-1 text-[10px] font-bold uppercase tracking-tighter'>
+                            <span class='text-emerald-600'>PG: {$record->pg_count}</span>
+                            <span class='text-gray-300'>|</span>
+                            <span class='text-blue-600'>Skt: {$record->short_count}</span>
+                            <span class='text-gray-300'>|</span>
+                            <span class='text-amber-600'>Esy: {$record->essay_count}</span>
+                        </div>
+                    ");
+                })
+                ->alignCenter(),
+
+            Tables\Columns\TextColumn::make('status')
+                ->label('Status')
+                ->badge(),
+            ];
     }
 
     protected static function buildExtensionLogHtml(Exam $record): string

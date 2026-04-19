@@ -17,4 +17,8 @@ class ExamClassroom extends Pivot
     protected $keyType = 'string';
 
     protected $guarded = [];
+
+    protected $cast = [
+        'min_total_score' => 'integer'
+    ];
 }
