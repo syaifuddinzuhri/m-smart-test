@@ -5,6 +5,7 @@ namespace App\Filament\Student\Pages;
 use App\Enums\ExamSessionStatus;
 use App\Models\ExamSession;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends BaseDashboard
@@ -16,6 +17,11 @@ class Dashboard extends BaseDashboard
     protected static ?string $navigationIcon = 'heroicon-o-home';
 
     protected static string $view = 'filament.student.pages.dashboard';
+
+    public function getHeading(): string|Htmlable
+    {
+        return '';
+    }
 
     public function mount()
     {

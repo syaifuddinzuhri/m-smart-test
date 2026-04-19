@@ -86,6 +86,22 @@ class Question extends Model
     {
         return in_array($this->question_type, [QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE, QuestionType::TRUE_FALSE]);
     }
+
+    public function isSingleChoice()
+    {
+        return $this->question_type === QuestionType::SINGLE_CHOICE;
+    }
+
+    public function isMultipleChoice()
+    {
+        return $this->question_type === QuestionType::MULTIPLE_CHOICE;
+    }
+
+    public function isTrueFalse()
+    {
+        return $this->question_type === QuestionType::TRUE_FALSE;
+    }
+
     public function isShortAnswer()
     {
         return $this->question_type === QuestionType::SHORT_ANSWER;
