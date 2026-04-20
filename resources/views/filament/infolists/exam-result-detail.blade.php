@@ -149,6 +149,7 @@
                                     $isSelected = is_array($item['answer'])
                                         ? in_array($key, $item['answer'])
                                         : $item['answer'] === $key;
+                                    $showKey = $item['is_single'] || $item['is_multiple'];
                                 @endphp
 
                                 <div @class([
@@ -167,7 +168,7 @@
                                         'bg-red-500 border-red-500 text-white' =>
                                             $isSelected && !$item['is_correct'],
                                     ])>
-                                        {{ $item['is_multiple'] ? strtoupper($key) : '' }}
+                                        {{ $showKey ? strtoupper($key) : '' }}
                                     </div>
                                     <div
                                         class="prose max-w-none text-gray-800 text-base font-medium leading-snug soal-content">

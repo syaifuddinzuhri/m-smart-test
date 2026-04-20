@@ -257,12 +257,20 @@ class ExamService
         $rawTotal = $totalPg + $totalShort + $totalEssay;
         $finalTotal = $this->calculateFinalScore($exam, $rawTotal);
 
+        $hasManualType = $questions->contains(fn($q) => $q->isShortAnswer() || $q->isEssay());
+
         $session->update([
             'score_pg' => $totalPg,
             'score_short_answer' => $totalShort,
             'score_essay' => $totalEssay,
             'total_score' => max(0, $finalTotal),
         ]);
+
+        if (!$hasManualType && is_null($session->finalized_at)) {
+            $updateData['finalized_at'] = now();
+        }
+
+        $session->update($updateData);
     }
 
     public function getQuestions(Exam $exam, ExamSession $session, bool $isOrdered = true)
@@ -384,6 +392,7 @@ class ExamService
                 'type' => $question->question_type,
                 'is_pg' => $question->isPg(),
                 'is_essay' => $question->isEssay(),
+                'is_single' => $question->isSingleChoice(),
                 'is_multiple' => $question->isMultipleChoice(),
                 'is_short' => $question->isShortAnswer(),
                 'question' => $question->question_text,

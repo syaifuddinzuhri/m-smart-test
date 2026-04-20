@@ -87,6 +87,7 @@ class DetailResultTest extends Page
             'score' => number_format($this->session->total_score, 2),
             'classroom' => $user->student?->classroom?->name . ' - ' . $user->student?->classroom?->major?->name,
             'passing_grade' => $passingGrade,
+            'is_finalized' => is_null($this->session->finalized_at),
             'is_passed' => is_null($passingGrade) || ($this->session->total_score >= $passingGrade),
         ];
 

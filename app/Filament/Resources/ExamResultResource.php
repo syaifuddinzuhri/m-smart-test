@@ -289,6 +289,11 @@ class ExamResultResource extends Resource
                                                 return $isPassed ? 'LULUS' : 'TIDAK LULUS';
                                             })
                                             ->badge()
+                                            ->icon(fn(string $state): string => match ($state) {
+                                                'LULUS' => 'heroicon-m-check-badge',
+                                                'TIDAK LULUS' => 'heroicon-m-x-circle',
+                                                default => 'heroicon-m-question-mark-circle',
+                                            })
                                             ->color(fn(string $state): string => match ($state) {
                                                 'LULUS' => 'success',
                                                 'TIDAK LULUS' => 'danger',
@@ -367,7 +372,7 @@ class ExamResultResource extends Resource
 
         $isPassed = $record->total_score >= $passingGrade;
 
-        $results = app(ExamService::class)->getQuestions($exam, $session);
+        $results = app(ExamService::class)->getQuestions($exam, $session, false);
 
 
         $imagePath = public_path('images/logo.webp');

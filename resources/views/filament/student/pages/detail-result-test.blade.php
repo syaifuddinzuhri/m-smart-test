@@ -5,9 +5,37 @@
                 href="{{ route('filament.student.pages.result-test') }}">
                 Kembali ke Riwayat
             </x-filament::button>
-            <div class="text-center md:text-right w-full md:w-auto">
-                <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Waktu Selesai</p>
-                <p class="text-sm font-semibold text-gray-700">{{ $session->finished_at->format('d/m/Y H:i:s T') }}</p>
+            <div class="w-full">
+                <div class="text-center md:text-right w-full md:w-auto">
+                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Waktu Selesai</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ $session->finished_at->format('d/m/Y H:i:s T') }}
+                    </p>
+                </div>
+                @if ($exam->show_result_to_student)
+                    <div class="flex md:justify-end justify-center mt-2">
+                        @if (!$stats['is_finalized'])
+                            <div
+                                class="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 uppercase tracking-wider">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                SUDAH FINAL
+                            </div>
+                        @else
+                            <div
+                                class="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800 uppercase tracking-wider">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                BELUM FINAL
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -350,6 +378,7 @@
                                         $isSelected = is_array($item['answer'])
                                             ? in_array($key, $item['answer'])
                                             : $item['answer'] === $key;
+                                        $showKey = $item['is_single'] || $item['is_multiple'];
                                     @endphp
 
                                     <div @class([
@@ -380,7 +409,7 @@
                                             // 'bg-red-500 border-red-500 text-white' =>
                                             //     $isSelected && $exam->show_result_to_student && !$item['is_correct'],
                                         ])>
-                                            {{ $item['is_multiple'] ? strtoupper($key) : '' }}
+                                            {{ $showKey ? strtoupper($key) : '' }}
                                         </div>
                                         <div
                                             class="prose max-w-none text-gray-800 text-base font-medium leading-snug soal-content">

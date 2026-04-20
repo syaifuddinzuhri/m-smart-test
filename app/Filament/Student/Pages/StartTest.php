@@ -226,7 +226,23 @@ class StartTest extends Page implements HasForms, HasActions
 
         if ($tab === 'pg') {
             $input = ($q->question_type === QuestionType::MULTIPLE_CHOICE) ? CheckboxList::make($name) : Radio::make($name);
-            $input->options($q->options->mapWithKeys(function ($opt) {
+
+            $letters = range('A', 'Z');
+
+            $input->options($q->options->mapWithKeys(function ($opt, $index) use ($letters, $q) {
+                $char = $letters[$index] ?? '';
+
+                if ($q->question_type === QuestionType::MULTIPLE_CHOICE || $q->question_type === QuestionType::SINGLE_CHOICE) {
+                    return [
+                        $opt->id => new HtmlString(
+                            "<div class='flex items-start gap-2 text-gray-700'>
+                                <span class='font-bold flex-shrink-0'>{$char}.</span>
+                                <div class='prose prose-sm max-w-none inline-block soal-content'>{$opt->text}</div>
+                            </div>"
+                        )
+                    ];
+                }
+
                 return [
                     $opt->id => new HtmlString(
                         "<div class='prose prose-sm max-w-none inline-block text-gray-700 soal-content'>{$opt->text}</div>"

@@ -290,6 +290,43 @@
             font-weight: bold;
         }
 
+        .option-circle {
+            display: inline-block;
+            width: 20px;
+            /* Ukuran lingkaran */
+            height: 20px;
+            border-radius: 50%;
+            /* Membuat bulat sempurna */
+            text-align: center;
+            vertical-align: middle;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1.5pt solid #e5e7eb;
+            /* border-gray-200 */
+            background-color: #ffffff;
+            color: #374151;
+            /* Line height harus sama dengan height/width untuk center vertikal */
+            line-height: 20px;
+            margin-right: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Kondisi Terpilih dan Benar (Hijau) */
+        .option-correct {
+            background-color: #22c55e !important;
+            border-color: #22c55e !important;
+            color: #ffffff !important;
+        }
+
+        /* Kondisi Terpilih dan Salah (Merah) */
+        .option-wrong {
+            background-color: #ef4444 !important;
+            border-color: #ef4444 !important;
+            color: #ffffff !important;
+        }
+
 
         .label-user-answer {
             font-size: 9px;
@@ -428,7 +465,7 @@
                     @else
                         <span class="badge badge-warning">BELUM FINAL</span>
                         <span style="margin-left: 8px; font-size: 11px; color: #888; font-style: italic;">
-                            (Menunggu validasi/koreksi pengawas)
+                            (Menunggu validasi/koreksi pengajar)
                         </span>
                     @endif
                 </td>
@@ -438,7 +475,7 @@
 
     {{-- DAFTAR JAWABAN --}}
     <div class="container">
-        @foreach ($results as $item)
+        @foreach ($results as $key => $item)
             @php
                 $statusClass = is_null($item['is_correct'])
                     ? 'card-pending'
@@ -448,7 +485,7 @@
             @endphp
 
             <div class="question-card {{ $statusClass }}">
-                <span class="question-number">SOAL #{{ $item['number'] }}</span>
+                <span class="question-number">SOAL #{{ $key + 1 }}</span>
 
                 <div class="soal-content question-text">
                     {!! $item['question'] !!}
@@ -467,13 +504,23 @@
                                         ? 'option-selected-correct'
                                         : 'option-selected-wrong';
                                 }
+
+                                $showKey = $item['is_single'] || $item['is_multiple'];
+
+                                $class = 'option-circle';
+                                if ($isSelected) {
+                                    $class .= $item['is_correct'] ? ' option-correct' : ' option-wrong';
+                                }
+
                             @endphp
                             <div class="option-item {{ $optionClass }}">
                                 <table style="width: 100%; border-collapse: collapse; border: none;">
                                     <tr>
                                         <!-- 1. KOLOM HURUF -->
                                         <td class="option-letter">
-                                            {{ strtoupper($key) }}.
+                                            <div class="{{ $class }}">
+                                                {{ $showKey ? strtoupper($key) : '' }}
+                                            </div>
                                         </td>
 
                                         <!-- 2. KOLOM ISI JAWABAN (Rata Kiri) -->
@@ -504,7 +551,7 @@
                 </div>
 
                 <div class="score-footer">
-                    Poin Diperoleh: {{ is_null($item['is_correct']) ? 'Pending' : $item['score'] }}
+                    Poin Diperoleh: {{ is_null($item['is_correct']) ? 'Menunggu koreksi pengajar' : $item['score'] }}
                 </div>
             </div>
         @endforeach

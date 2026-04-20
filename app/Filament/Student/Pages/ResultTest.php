@@ -18,6 +18,7 @@ use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +111,7 @@ class ResultTest extends Page implements HasTable
                     ->label('Lihat Detail')
                     ->icon('heroicon-m-eye')
                     ->button()
+                    ->color('gray')
                     ->outlined()
                     ->extraAttributes(['class' => 'w-full md:w-auto mt-4 justify-center'])
                     ->url(fn($record) => DetailResultTest::getUrl([
@@ -126,56 +128,9 @@ class ResultTest extends Page implements HasTable
                     ->label('Judul')
                     ->weight(FontWeight::Bold)
                     ->size(TextColumn\TextColumnSize::Large),
-                Split::make([
-                    TextColumn::make('finished_at')
-                        ->description(new HtmlString('
-                            <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-[-4px]">
-                                Waktu Selesai
-                            </span>
-                        '), position: 'above')
-                        ->dateTime('d M Y, H:i T')
-                        ->size(TextColumn\TextColumnSize::ExtraSmall)
-                        ->color('gray')
-                        ->icon('heroicon-m-calendar-days'),
-                    TextColumn::make('subject.name')
-                        ->formatStateUsing(fn($state) => 'Mata Pelajaran: ' . $state)
-                        ->size(TextColumn\TextColumnSize::ExtraSmall)
-                        ->color('gray'),
-                    TextColumn::make('target_classroom')
-                        ->formatStateUsing(fn($state) => 'Kelas: ' . $state)
-                        ->size(TextColumn\TextColumnSize::ExtraSmall)
-                        ->color('gray'),
-                ])->from('md')->extraAttributes(['class' => 'mb-1']),
-
-
-                Split::make([
-                    TextColumn::make('student_score')
-                        ->getStateUsing(function ($record) {
-                            $score = number_format($record->student_score, 2);
-                            $max = $record->target_max_score;
-                            if ($max > 0) {
-                                return "Skor: {$score} / {$max}";
-                            }
-                            return "Skor: {$score}";
-                        })
-                        ->badge()
-                        ->color('info')
-                        ->weight(FontWeight::Black),
-
-                    TextColumn::make('passing_grade')
-                        ->getStateUsing(fn($record) => "KKM / Min. Skor: " . number_format($record->passing_grade, 2))
-                        ->badge()
-                        ->color('gray')
-                        ->icon('heroicon-m-flag'),
-
-                    TextColumn::make('is_lulus')
-                        ->getStateUsing(function ($record) {
-                            return $record->student_score >= $record->passing_grade ? 'LULUS' : 'TIDAK LULUS';
-                        })
-                        ->badge()
-                        ->color(fn($state) => $state === 'LULUS' ? 'success' : 'danger'),
-                ])->extraAttributes(['class' => 'mt-3 mb-2'])
-                    ->visible(fn(Exam $record) => $record->show_result_to_student)
+                ViewColumn::make('full_info')
+                    ->label('Informasi Hasil Ujian')
+                    ->view('filament.tables.columns.exam-session-info')
             ])->space(2),
         ];
     }
