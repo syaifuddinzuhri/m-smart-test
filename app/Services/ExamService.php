@@ -125,16 +125,9 @@ class ExamService
         }
     }
 
-    /**
-     * Verifikasi Manual oleh Admin/Pengawas
-     * Menentukan status jawaban (Benar/Salah) dan sistem otomatis menghitung poinnya.
-     */
     public function manualVerify(ExamAnswer $answer, bool $isCorrect, ?float $essayScore = null): void
     {
-        $answer->load([
-            'session.exam',
-            'question'
-        ]);
+        $answer->load(['session.exam', 'question']);
         $exam = $answer->session->exam;
         $question = $answer->question;
         $oldScore = (float) $answer->score;
@@ -143,52 +136,47 @@ class ExamService
 
         // 1. LOGIKA KHUSUS ESSAY
         if ($question->isEssay()) {
-            // Jika admin memberikan input angka skor
             if ($essayScore !== null) {
-                // Validasi: Skor tidak boleh melebihi batas maksimal di pengaturan ujian
                 if ($essayScore > $exam->point_essay_max) {
-                    throw new Exception("Skor gagal disimpan. Maksimal poin essay untuk ujian ini adalah {$exam->point_essay_max}");
+                    throw new Exception("Skor gagal disimpan. Maksimal poin essay adalah {$exam->point_essay_max}");
                 }
                 if ($essayScore < 0) {
                     throw new Exception("Skor tidak boleh kurang dari 0.");
                 }
-
-                $newScore = $essayScore ?? ($isCorrect ? $answer->session->exam->point_essay_max : 0);
-                // Ketentuan: Skor > 0 dianggap True (Benar), Skor 0 dianggap False (Salah)
+                $newScore = $essayScore;
                 $isCorrect = $newScore > 0;
             } else {
-                // Jika admin tidak input angka (hanya klik tombol Benar/Salah)
-                $newScore = $isCorrect ? $exam->point_essay_max : 0;
+                // Jika admin hanya klik tombol Benar/Salah tanpa input angka
+                $newScore = $isCorrect ? (float) $exam->point_essay_max : 0;
             }
         }
 
-        // 2. LOGIKA UNTUK NON-ESSAY (PG & SHORT ANSWER)
+        // 2. LOGIKA UNTUK NON-ESSAY (Jika admin ingin override PG/Short Answer)
         else {
             if ($isCorrect) {
-                // JIKA ADMIN MENYATAKAN BENAR
                 $newScore = match (true) {
-                    $question->isPg() => $exam->point_pg,
-                    $question->isShortAnswer() => $exam->point_short_answer,
+                    $question->isPg() => (float) $exam->point_pg,
+                    $question->isShortAnswer() => (float) $exam->point_short_answer,
                     default => 0
                 };
             } else {
-                // JIKA ADMIN MENYATAKAN SALAH
+                // PERBAIKAN: Gunakan NEGATIF jika salah (Sesuai sistem pinalti)
                 $newScore = match (true) {
-                    $question->isPg() => $exam->point_pg_wrong,
-                    $question->isShortAnswer() => $exam->point_short_answer_wrong,
+                    $question->isPg() => -(float) $exam->point_pg_wrong,
+                    $question->isShortAnswer() => -(float) $exam->point_short_answer_wrong,
                     default => 0
                 };
             }
         }
 
-        // 3. SIMPAN PERUBAHAN
+        // 3. SIMPAN PERUBAHAN KE JAWABAN
         $answer->update([
             'is_correct' => $isCorrect,
             'score' => $newScore,
         ]);
 
         // 4. SINKRONISASI TOTAL SKOR SESI
-        // Panggil incremental
+        // Kita gunakan incremental karena lebih efisien dan sudah mencakup hitung ulang total_score
         $this->updateIncrementalScore($answer->session, $answer->question->question_type, $oldScore, $newScore);
     }
 
