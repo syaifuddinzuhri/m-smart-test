@@ -117,17 +117,6 @@ class EditExam extends EditRecord
         return $breadcrumb;
     }
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('back')
-                ->label('Kembali')
-                ->color('gray')
-                ->url(static::getResource()::getUrl('index'))
-                ->icon('heroicon-m-arrow-left'),
-        ];
-    }
-
     protected function getFormActions(): array
     {
         if ($this->getRecord()->status !== ExamStatus::DRAFT) {
@@ -140,5 +129,25 @@ class EditExam extends EditRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('back')
+                ->label('Kembali')
+                ->color('gray')
+                ->url(static::getResource()::getUrl('index'))
+                ->icon('heroicon-m-arrow-left'),
+            Action::make('help_scoring')
+                ->label('Panduan Skema Poin')
+                ->icon('heroicon-m-information-circle')
+                ->color('info') // Warna biru
+                ->modalHeading('Simulasi Perhitungan Poin & Pinalti')
+                ->modalWidth('4xl')
+                ->modalSubmitAction(false) // Hilangkan tombol submit modal
+                ->modalCancelActionLabel('Tutup')
+                ->modalContent(view('filament.pages.exam-scoring-help')), // Panggil file blade tadi
+        ];
     }
 }
