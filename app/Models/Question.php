@@ -29,6 +29,10 @@ class Question extends Model
                 throw new \Exception("Soal ini tidak bisa dihapus karena sudah digunakan dalam Ujian.");
             }
 
+            if ($question->examAnswers()->exists()) {
+                throw new \Exception("Soal tidak bisa dihapus karena sudah ada data jawaban siswa terkait soal ini.");
+            }
+
             $directoryPath = "questions/{$question->id}";
 
             if (Storage::disk('public')->exists($directoryPath)) {
@@ -74,6 +78,11 @@ class Question extends Model
     public function examQuestions(): HasMany
     {
         return $this->hasMany(ExamQuestion::class, 'question_id');
+    }
+
+    public function examAnswers()
+    {
+        return $this->hasMany(ExamAnswer::class, 'question_id');
     }
 
     public function exams(): BelongsToMany

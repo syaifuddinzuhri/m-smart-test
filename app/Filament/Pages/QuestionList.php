@@ -181,15 +181,18 @@ class QuestionList extends Page implements HasActions
             ->color('danger')
             ->visible(fn() => $this->filters['subject_id'] && $this->filters['question_category_id'])
             ->action(function () {
-                $count = Question::where('subject_id', $this->filters['subject_id'])
+                $questions = Question::where('subject_id', $this->filters['subject_id'])
                     ->where('question_category_id', $this->filters['question_category_id'])
-                    ->count();
+                    ->get();
+
+                $count = $questions->count();
+
 
                 if ($count > 0) {
                     try {
-                        Question::where('subject_id', $this->filters['subject_id'])
-                            ->where('question_category_id', $this->filters['question_category_id'])
-                            ->delete();
+                        foreach ($questions as $question) {
+                            $question->delete();
+                        }
 
                         Notification::make()
                             ->title($count . ' Soal berhasil dihapus')
