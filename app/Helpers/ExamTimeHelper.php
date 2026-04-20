@@ -13,7 +13,7 @@ class ExamTimeHelper
     /**
      * Menambah waktu individu dengan logging JSON.
      */
-    public static function extendSession(ExamSession $session, int $minutes, $reason = 'Tidak Ada Alasan'): void
+    public static function extendSession(ExamSession $session, int $minutes, $reason = 'Tidak Ada Alasan', $reactive = false): void
     {
         DB::transaction(function () use ($session, $minutes, $reason) {
             $session->refresh();

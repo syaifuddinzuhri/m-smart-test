@@ -24,7 +24,7 @@ enum ExamSessionStatus: string implements HasLabel, HasColor
             self::NOT_STARTED => 'Belum Dikerjakan',
             self::ONGOING => 'Sedang Dikerjakan',
             self::PAUSE => 'Terjeda',
-            self::COMPLETED => 'Sudah Selesai',
+            self::COMPLETED => 'Selesai',
         };
     }
 
@@ -37,5 +37,15 @@ enum ExamSessionStatus: string implements HasLabel, HasColor
             self::PAUSE => 'info',
             self::COMPLETED => 'success',
         };
+    }
+
+    public static function withoutCompleted(): array
+    {
+        return collect(self::cases())
+            ->reject(fn($case) => $case === self::COMPLETED)
+            ->mapWithKeys(fn($case) => [
+                $case->value => $case->getLabel(),
+            ])
+            ->toArray();
     }
 }

@@ -34,6 +34,12 @@ class ExamMonitoringResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('status', '!=', ExamSessionStatus::COMPLETED);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -194,7 +200,7 @@ class ExamMonitoringResource extends Resource
                 // 4. FILTER MULTIPLE STATUS
                 SelectFilter::make('status')
                     ->label('Status Sesi')
-                    ->options(ExamSessionStatus::class)
+                    ->options(ExamSessionStatus::withoutCompleted())
                     ->query(function (Builder $query, array $data) {
                         if (filled($data['value'] ?? null)) {
                             $query->where('status', $data['value']);
