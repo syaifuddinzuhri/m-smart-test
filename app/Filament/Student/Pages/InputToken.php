@@ -212,12 +212,36 @@ class InputToken extends Page implements HasForms
                 $additional = collect($this->record->extension_log ?? [])->sum('minutes');
             }
 
+            /**
+             * LOGIKA INISIALISASI PINALTI (HUTANG POIN)
+             * Menghitung total pinalti awal berdasarkan jumlah soal
+             */
+            $initialPg = 0;
+            $initialShort = 0;
+            $initialEssay = 0;
+
+            foreach ($this->record->questions as $q) {
+                if ($q->isPg()) {
+                    $initialPg -= (float) $this->record->point_pg_null;
+                } elseif ($q->isShortAnswer()) {
+                    $initialShort -= (float) $this->record->point_short_answer_null;
+                } elseif ($q->isEssay()) {
+                    $initialEssay -= (float) $this->record->point_essay_null;
+                }
+            }
+
             $updateData = array_merge($updateData, [
                 'started_at' => now(),
                 'expires_at' => now()->addMinutes($this->record->duration + $additional),
                 'question_seed' => $uniqueQuestionSeed,
                 'option_seed' => $uniqueOptionSeed,
+                // Set nilai awal sebagai minus (hutang pinalti)
+                'score_pg' => $initialPg,
+                'score_short_answer' => $initialShort,
+                'score_essay' => $initialEssay,
+                'total_score' => 0,
             ]);
+
         }
 
         $session->fill($updateData);

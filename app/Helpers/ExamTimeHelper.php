@@ -39,6 +39,8 @@ class ExamTimeHelper
             ];
 
             $session->update([
+                'status' => ExamSessionStatus::ONGOING,
+                'finished_at' => null,
                 'expires_at' => $newExpiresAt,
                 'extension_log' => $logs // Simpan Log
             ]);

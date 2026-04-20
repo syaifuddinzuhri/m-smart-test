@@ -48,6 +48,7 @@ class StartTest extends Page implements HasForms, HasActions
     public $doubtfulQuestions = [], $durationInSeconds = 0;
     public bool $isLocked = false;
     public ?string $token = null;
+    public $sessionId;
     public ?Exam $exam = null;
     public ?ExamSession $session = null;
 
@@ -60,12 +61,25 @@ class StartTest extends Page implements HasForms, HasActions
     {
         $this->token = request()->query('token');
         $tokenHash = hash('sha256', $this->token);
+
+        // Cari session pertama kali
         $this->session = ExamSession::where('token', $tokenHash)->first();
 
-        if (!$this->session || !$this->exam = Exam::find($this->session->exam_id)) {
+        // 1. Validasi Keberadaan Session
+        if (!$this->session) {
             return redirect()->to('/student');
         }
 
+        // Simpan ID untuk request selanjutnya
+        $this->sessionId = $this->session->id;
+
+        // 2. Validasi Keberadaan Exam
+        $this->exam = Exam::find($this->session->exam_id);
+        if (!$this->exam) {
+            return redirect()->to('/student');
+        }
+
+        // 3. Logika Status Pause
         if ($this->session->status === ExamSessionStatus::PAUSE) {
             $this->isLocked = true;
         }
@@ -75,9 +89,7 @@ class StartTest extends Page implements HasForms, HasActions
         if ($this->totalPG === 0 && $this->totalEssay > 0)
             $this->activeTab = 'essay';
 
-        $redirect = $this->syncAndValidateTimer();
-        if ($redirect)
-            return $redirect;
+        $this->syncAndValidateTimer();
 
         // Load Initial Data
         $savedAnswers = ExamAnswer::where('exam_session_id', $this->session->id)->with('selectedOptions')->get();
@@ -330,7 +342,6 @@ class StartTest extends Page implements HasForms, HasActions
                     ->title('Waktu Ujian Habis')
                     ->body('Sesi Anda telah berakhir. Jawaban yang tersimpan telah dikirim otomatis.')
                     ->warning()
-                    ->persistent()
                     ->send();
             } else {
                 Notification::make()
@@ -347,7 +358,6 @@ class StartTest extends Page implements HasForms, HasActions
                 ->title('Terjadi kesalahan')
                 ->body('Terjadi kesalahan teknis saat menyimpan: ' . $e->getMessage())
                 ->warning()
-                ->persistent()
                 ->send();
         }
 

@@ -152,19 +152,25 @@ class ExamResource extends Resource
                                         Section::make('Pilihan Ganda')
                                             ->schema([
                                                 TextInput::make('point_pg')->label('Poin Benar')->numeric()->default(1),
-                                                TextInput::make('point_pg_wrong')->label('Poin Salah')->numeric()->default(0),
-                                                TextInput::make('point_pg_null')->label('Poin Kosong')->numeric()->default(0),
+                                                TextInput::make('point_pg_wrong')->label('Poin Salah')->numeric()->default(0)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
+                                                TextInput::make('point_pg_null')->label('Poin Kosong')->numeric()->default(0)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
                                             ])->columnSpan(1),
                                         Section::make('Jawaban Singkat')
                                             ->schema([
                                                 TextInput::make('point_short_answer')->label('Poin Benar')->numeric()->default(1),
-                                                TextInput::make('point_short_answer_wrong')->label('Poin Salah')->numeric()->default(0),
-                                                TextInput::make('point_short_answer_null')->label('Poin Kosong')->numeric()->default(0),
+                                                TextInput::make('point_short_answer_wrong')->label('Poin Salah')->numeric()->default(0)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
+                                                TextInput::make('point_short_answer_null')->label('Poin Kosong')->numeric()->default(0)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
                                             ])->columnSpan(1),
                                         Section::make('Essay')
                                             ->schema([
-                                                TextInput::make('point_essay_max')->label('Poin Maksimal')->numeric()->default(10),
-                                                TextInput::make('point_essay_null')->label('Poin Kosong')->numeric()->default(0),
+                                                TextInput::make('point_essay_max')->label('Poin Maksimal')->numeric()->default(10)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
+                                                TextInput::make('point_essay_null')->label('Poin Kosong')->numeric()->default(0)->helperText('Poin pinalti yang akan mengurangi total skor jika soal tidak dijawab.')
+                                                    ->prefix('-'),
                                             ])->columnSpan(1),
                                     ]),
                             ]),
@@ -199,6 +205,11 @@ class ExamResource extends Resource
                                                     ->label('Tampilkan Nilai ke Peserta')
                                                     ->helperText('Peserta dapat melihat skor akhir setelah mereka menyelesaikan ujian.')
                                                     ->default(false),
+                                                TextInput::make('target_max_score')->label('Maksimal Skor Akhir')
+                                                    ->numeric()
+                                                    ->default(100)
+                                                    ->minValue(100)
+                                                    ->helperText('Total poin yang didapat siswa akan dikonversi secara proporsional ke skala ini (misal: 100). Kosongkan jika ingin menggunakan skor mentah.')
                                             ])->columnSpan(1),
                                     ]),
                             ]),

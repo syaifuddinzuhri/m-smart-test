@@ -49,11 +49,20 @@ class ExamService
         $exam = $answer->session->exam;
 
         if ($question->question_type === QuestionType::ESSAY) {
-            return $answer->score;
+            return (float) ($answer->score ?? 0);
         }
 
         $isCorrect = false;
-        $score = 0;
+        $penaltyScore = 0;
+        $positiveScore = 0;
+
+        if ($question->isPg()) {
+            $positiveScore = $exam->point_pg;
+            $penaltyScore = $exam->point_pg_wrong;
+        } elseif ($question->isShortAnswer()) {
+            $positiveScore = $exam->point_short_answer;
+            $penaltyScore = $exam->point_short_answer_wrong;
+        }
 
         switch ($question->question_type) {
             case QuestionType::SINGLE_CHOICE:
@@ -61,25 +70,26 @@ class ExamService
                 $correctOption = $question->options->where('is_correct', true)->first();
                 $selectedOption = $answer->selectedOptions->first();
                 $isCorrect = $selectedOption && $correctOption && ($selectedOption->id === $correctOption->id);
-                $score = $isCorrect ? $exam->point_pg : $exam->point_pg_wrong;
                 break;
 
             case QuestionType::MULTIPLE_CHOICE:
                 $correctOptionIds = $question->options->where('is_correct', true)->pluck('id')->sort()->values()->toArray();
                 $selectedOptionIds = $answer->selectedOptions->pluck('id')->sort()->values()->toArray();
                 $isCorrect = ($correctOptionIds === $selectedOptionIds);
-                $score = $isCorrect ? $exam->point_pg : $exam->point_pg_wrong;
                 break;
 
             case QuestionType::SHORT_ANSWER:
                 $studentText = trim(strtolower($answer->answer_text ?? ''));
                 $keys = collect(explode('|', $question->correct_answer_text ?? ''))->map(fn($k) => trim(strtolower($k)))->filter();
                 $isCorrect = $keys->contains($studentText);
-                $score = $isCorrect ? $exam->point_short_answer : $exam->point_short_answer_wrong;
                 break;
         }
 
-        return (float) $score;
+        if ($isCorrect) {
+            return (float) $positiveScore;
+        } else {
+            return -(float) $penaltyScore;
+        }
     }
 
     public function updateIncrementalScore(ExamSession $session, QuestionType $questionType, float $oldScore, float $newScore): void
@@ -89,9 +99,6 @@ class ExamService
             return;
 
         $exam = $session->exam;
-
-        $targetMaxScore = $exam->target_max_score;
-
         $column = match ($questionType) {
             QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE, QuestionType::TRUE_FALSE => 'score_pg',
             QuestionType::SHORT_ANSWER => 'score_short_answer',
@@ -100,17 +107,21 @@ class ExamService
         };
 
         if ($column) {
+            // 1. Update Sub-Skor di Database
             $session->increment($column, $diff);
-            // 2. Update Total Score
-            if ($targetMaxScore) {
-                // Jika ada normalisasi, kita hitung selisih proporsionalnya
-                $maxRaw = $this->getMaxPossibleRawScore($exam);
-                $normalizedDiff = $maxRaw > 0 ? ($diff / $maxRaw) * $targetMaxScore : 0;
-                $session->increment('total_score', $normalizedDiff);
-            } else {
-                // Jika tidak ada normalisasi, tambah mentah-mentah
-                $session->increment('total_score', $diff);
-            }
+
+            // Refresh data session agar mendapatkan nilai terbaru setelah increment
+            $session->refresh();
+
+            // 2. Hitung Ulang Total Score secara Utuh (Agar sinkron dengan Sync)
+            $rawTotal = (float) $session->score_pg + (float) $session->score_short_answer + (float) $session->score_essay;
+
+            $finalTotal = $this->calculateFinalScore($exam, $rawTotal);
+
+            // 3. Update Total Score Hasil Kalkulasi Ulang
+            $session->update([
+                'total_score' => $finalTotal
+            ]);
         }
     }
 
@@ -181,6 +192,23 @@ class ExamService
         $this->updateIncrementalScore($answer->session, $answer->question->question_type, $oldScore, $newScore);
     }
 
+    public function calculateFinalScore(Exam $exam, float $rawTotal): float
+    {
+        // PASTIKAN NAMA KOLOM BENAR: target_max_score
+        $targetMaxScore = $exam->target_max_score;
+
+        // Jika admin tidak menset target score (null atau 0), tampilkan poin mentah apa adanya
+        if (is_null($targetMaxScore) || $targetMaxScore == 0) {
+            return $rawTotal;
+        }
+
+        // Jika ada target (misal 100), lakukan normalisasi
+        $cleanRawTotal = max(0, $rawTotal);
+        $maxRaw = $this->getMaxPossibleRawScore($exam);
+
+        // Rumus: (Poin didapat / Poin Maksimal) * Target (misal 100)
+        return $maxRaw > 0 ? ($cleanRawTotal / $maxRaw) * $targetMaxScore : 0;
+    }
     /**
      * Sinkronisasi total skor PG, Isian, Essay ke tabel ExamSession.
      * Termasuk menangani poin untuk soal yang tidak dijawab (null point).
@@ -192,88 +220,56 @@ class ExamService
         ]);
         $exam = $session->exam;
 
-        $targetMaxScore = $exam->target_max_score;
-
         // 1. Ambil semua soal dalam ujian ini
         $questions = $exam->questions; // Pastikan relasi questions ada di Model Exam
 
         // 2. Ambil semua jawaban yang sudah masuk
-        $answers = ExamAnswer::where('exam_session_id', $session->id)->get()->keyBy('question_id');
+        $answers = ExamAnswer::with(['selectedOptions'])->where('exam_session_id', $session->id)->get()->keyBy('question_id');
 
         $totalPg = 0;
         $totalShort = 0;
         $totalEssay = 0;
 
-        foreach ($questions as $q) {
+        foreach ($exam->questions as $q) {
             $answer = $answers->get($q->id);
+            $hasContent = $answer && ($q->isPg()
+                ? $answer->selectedOptions->count() > 0
+                : trim(strip_tags($answer->answer_text ?? '')) !== '');
 
-            /**
-             * Logika Penentuan Jawaban Kosong:
-             * 1. Benar-benar tidak ada data answer.
-             * 2. Ada data answer, tapi is_doubtful DAN tidak sedang forceSubmit.
-             * 3. (Opsional) Jika forceSubmit tapi answer memang kosong (null/string kosong), tetap dianggap null point.
-             */
-            $isAnswerMissing = !$answer || $answer->is_doubtful;
+            if (!$hasContent) {
+                // PINALTI KOSONG (NEGATIF)
+                if ($q->isPg())
+                    $totalPg -= (float) $exam->point_pg_null;
+                elseif ($q->isShortAnswer())
+                    $totalShort -= (float) $exam->point_short_answer_null;
+                elseif ($q->isEssay())
+                    $totalEssay -= (float) $exam->point_essay_null;
+            } else {
+                // --- ADA JAWABAN ---
+                if ($q->isEssay()) {
+                    $totalEssay += is_null($answer->is_correct) ? 0 : (float) $answer->score;
+                }
+                // PERBAIKAN DI SINI: Pisahkan PG dan Short Answer
+                elseif ($q->isShortAnswer()) {
+                    $totalShort += (float) ($answer->score);
+                } elseif ($q->isPg()) {
+                    $totalPg += (float) ($answer->score);
+                }
 
-            // Cek tambahan jika forceSubmit tapi isinya memang kosong
-            if ($answer && $answer->is_doubtful) {
-                /**
-                 * Memastikan konten jawaban benar-benar ada.
-                 * - empty($answer->answer_text) untuk tipe Isian/Essay.
-                 * - ! $answer->options()->exists() untuk tipe Pilihan Ganda.
-                 */
-                $isPhysicallyEmpty = empty($answer->answer_text) && !$answer->options()->exists();
-
-                if ($isPhysicallyEmpty) {
-                    $isAnswerMissing = true;
+                if ($answer->is_doubtful) {
+                    $answer->update(['is_doubtful' => null]);
                 }
             }
-
-            if ($isAnswerMissing) {
-                // Point Null
-                if ($q->isPg())
-                    $totalPg += $exam->point_pg_null;
-                if ($q->isShortAnswer())
-                    $totalShort += $exam->point_short_answer_null;
-                if ($q->isEssay())
-                    $totalEssay += $exam->point_essay_null;
-                continue;
-            }
-
-            if (!$answer) {
-                // Point Null
-                if ($q->isPg())
-                    $totalPg += $exam->point_pg_null;
-                if ($q->isShortAnswer())
-                    $totalShort += $exam->point_short_answer_null;
-                if ($q->isEssay())
-                    $totalEssay += $exam->point_essay_null;
-                continue;
-            }
-
-            // LOGIKA POIN DARI JAWABAN ADA
-            if ($q->isPg())
-                $totalPg += $answer->score;
-            if ($q->isShortAnswer())
-                $totalShort += $answer->score;
-            if ($q->isEssay())
-                $totalEssay += $answer->score;
         }
 
         $rawTotal = $totalPg + $totalShort + $totalEssay;
-        $finalTotal = $rawTotal;
-
-        if ($targetMaxScore) {
-            $maxRaw = $this->getMaxPossibleRawScore($exam);
-            $finalTotal = $maxRaw > 0 ? ($rawTotal / $maxRaw) * $targetMaxScore : 0;
-        }
+        $finalTotal = $this->calculateFinalScore($exam, $rawTotal);
 
         $session->update([
             'score_pg' => $totalPg,
             'score_short_answer' => $totalShort,
             'score_essay' => $totalEssay,
-            'total_score' => $finalTotal,
-            'is_doubtful' => null
+            'total_score' => max(0, $finalTotal),
         ]);
     }
 
@@ -354,7 +350,11 @@ class ExamService
 
             $results[] = [
                 'number' => $index + 1,
-                'is_correct' => $studentAnswer->is_correct,
+                'is_correct' => $studentAnswer?->is_correct ?? null,
+                'has_answer' => $studentAnswer && (!empty($studentAnswer->answer_text) || $studentAnswer->selectedOptions()->exists()),
+                'point_pg_null' => $exam->point_pg_null,
+                'point_short_answer_null' => $exam->point_short_answer_null,
+                'point_essay_null' => $exam->point_essay_null,
                 'type_label' => $uiType,
                 'type' => $question->question_type,
                 'is_pg' => $question->isPg(),

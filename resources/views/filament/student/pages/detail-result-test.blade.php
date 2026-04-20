@@ -138,7 +138,7 @@
                                 </div>
                             @else
                                 <div class="absolute -right-8 -bottom-10">
-                                    <x-heroicon-s-exclamation-circle
+                                    <x-heroicon-s-x-circle
                                         class="h-32 w-32 md:h-48 md:w-48 text-red-500 opacity-10 opacity-10 -rotate-12" />
                                 </div>
                             @endif
@@ -170,35 +170,38 @@
             </div>
 
             {{-- Row 2: Grading Details --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                    class="bg-gray-50 p-4 md:p-6 rounded-2xl border border-gray-200 text-center flex flex-col justify-evenly">
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-tighter mb-1">Soal Tidak Dijawab
-                    </p>
-                    <p class="text-3xl font-black text-gray-600">{{ $stats['unanswered'] }}</p>
-                </div>
-                <div
-                    class="bg-green-50 p-4 md:p-6 rounded-2xl border border-green-100 text-center flex flex-col justify-evenly">
-                    <p class="text-xs font-bold text-green-600 uppercase tracking-tighter mb-1">Soal Benar</p>
-                    <p class="text-3xl font-black text-green-600">{{ $stats['correct_answers'] }}</p>
-                </div>
+            @if ($exam->show_result_to_student)
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div
+                        class="bg-gray-50 p-4 md:p-6 rounded-2xl border border-gray-200 text-center flex flex-col justify-evenly">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-tighter mb-1">Soal Tidak Dijawab
+                        </p>
+                        <p class="text-3xl font-black text-gray-600">{{ $stats['unanswered'] }}</p>
+                    </div>
+                    <div
+                        class="bg-green-50 p-4 md:p-6 rounded-2xl border border-green-100 text-center flex flex-col justify-evenly">
+                        <p class="text-xs font-bold text-green-600 uppercase tracking-tighter mb-1">Soal Benar</p>
+                        <p class="text-3xl font-black text-green-600">{{ $stats['correct_answers'] }}</p>
+                    </div>
 
-                <div
-                    class="bg-red-50 p-4 md:p-6 rounded-2xl border border-red-100 text-center flex flex-col justify-evenly">
-                    <p class="text-xs font-bold text-red-600 uppercase tracking-tighter mb-1">Soal Salah</p>
-                    <p class="text-3xl font-black text-red-600">{{ $stats['wrong_answers'] }}</p>
-                </div>
+                    <div
+                        class="bg-red-50 p-4 md:p-6 rounded-2xl border border-red-100 text-center flex flex-col justify-evenly">
+                        <p class="text-xs font-bold text-red-600 uppercase tracking-tighter mb-1">Soal Salah</p>
+                        <p class="text-3xl font-black text-red-600">{{ $stats['wrong_answers'] }}</p>
+                    </div>
 
-                <div
-                    class="bg-orange-50 p-4 md:p-6 rounded-2xl border border-orange-100 text-center flex flex-col justify-evenly">
-                    <p class="text-xs font-bold text-orange-600 uppercase tracking-tighter mb-1">Soal Belum Dikoreksi
-                    </p>
-                    <p class="text-3xl font-black text-orange-600">{{ $stats['pending_review'] }}</p>
-                    <p class="text-[10px] text-orange-400 leading-none mt-1 italic">*Menuggu hasil koreksi manual
-                        (Essay)
-                    </p>
+                    <div
+                        class="bg-orange-50 p-4 md:p-6 rounded-2xl border border-orange-100 text-center flex flex-col justify-evenly">
+                        <p class="text-xs font-bold text-orange-600 uppercase tracking-tighter mb-1">Soal Belum
+                            Dikoreksi
+                        </p>
+                        <p class="text-3xl font-black text-orange-600">{{ $stats['pending_review'] }}</p>
+                        <p class="text-[10px] text-orange-400 leading-none mt-1 italic">*Menuggu hasil koreksi manual
+                            (Essay)
+                        </p>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <div class="space-y-6">
@@ -207,27 +210,101 @@
                 Analisis Pengerjaan
             </h3>
 
+            <div class="sticky top-[64px] -mx-4 sm:mx-0 z-20 transition-all duration-300">
+                <div
+                    class="bg-white/80 backdrop-blur-xl border-b sm:border border-gray-200 sm:rounded-3xl shadow-lg p-3 sm:p-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+
+                        <!-- Label & Ringkasan Singkat (Hanya muncul di desktop atau mode compact) -->
+                        <div class="flex items-center gap-3 pr-4 border-r border-gray-200">
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigasi</span>
+                                <span class="text-xs font-bold text-gray-700">{{ $stats['total_questions'] }}
+                                    Soal</span>
+                            </div>
+                        </div>
+
+                        <!-- CONTAINER NOMOR (Scrollable di Mobile, Wrap di Desktop) -->
+                        <div class="flex-1 overflow-x-auto no-scrollbar py-1">
+                            <div
+                                class="flex sm:flex-wrap flex-nowrap gap-2 min-w-max sm:min-w-0 max-h-[100px] overflow-y-auto pr-4">
+                                @foreach ($results as $navItem)
+                                    @php
+                                    @endphp
+                                    <a href="#question-{{ $navItem['number'] }}" @class([
+                                        'flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl font-bold text-[11px] sm:text-xs transition-all border-2',
+                                        // --- KONDISI JIKA HASIL DITAMPILKAN (Warna-warni) ---
+                                        // 'bg-green-500 border-green-400 text-white shadow-sm shadow-green-100' =>
+                                        //     $exam->show_result_to_student && $navItem['is_correct'] === 1,
+
+                                        // 'bg-red-500 border-red-400 text-white shadow-sm shadow-red-100' =>
+                                        //     $exam->show_result_to_student && $navItem['is_correct'] === 0,
+
+                                        // 'bg-yellow-500 border-yellow-400 text-white shadow-sm shadow-yellow-100' =>
+                                        //     $exam->show_result_to_student &&
+                                        //     is_null($navItem['is_correct']) &&
+                                        //     $navItem['has_answer'],
+
+                                        // 'bg-gray-100 border-gray-300 text-gray-400' =>
+                                        //     $exam->show_result_to_student &&
+                                        //     is_null($navItem['is_correct']) &&
+                                        //     !$navItem['has_answer'],
+
+                                        // --- KONDISI JIKA HASIL DISEMBUNYIKAN (Hanya Abu-abu) ---
+                                        // Sudah dijawab: Abu-abu lebih tebal/gelap
+                                        'bg-gray-600 border-gray-500 text-white' => $navItem['has_answer'],
+
+                                        // Belum dijawab: Abu-abu terang
+                                        'bg-gray-100 border-gray-200 text-gray-400' => !$navItem['has_answer'],
+                                    ])>
+                                        {{ $navItem['number'] }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        @if ($exam->show_result_to_student)
+                            <div class="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-gray-200">
+                                <div class="flex gap-2 text-[10px] font-bold uppercase">
+                                    <span class="text-green-600 bg-green-50 px-2 py-1 rounded-md">✔
+                                        {{ $stats['correct_answers'] }}</span>
+                                    <span class="text-red-600 bg-red-50 px-2 py-1 rounded-md">✘
+                                        {{ $stats['wrong_answers'] }}</span>
+                                    <span class="text-gray-600 bg-gray-50 px-2 py-1 rounded-md">!
+                                        {{ $stats['unanswered'] }}</span>
+                                    @if ($stats['pending_review'] > 0)
+                                        <span class="text-yellow-600 bg-yellow-50 px-2 py-1 rounded-md">?
+                                            {{ $stats['pending_review'] }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             @foreach ($results as $item)
-                <div @class([
-                    'p-6 pt-10 rounded-3xl border-2 transition-all bg-white relative overflow-hidden', // Tambah pt-10 untuk ruang nomor
-                    'border-gray-200 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]' => !$exam->show_result_to_student,
-                    'border-green-100 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]' =>
-                        $exam->show_result_to_student && $item['is_correct'] === 1,
-                    'border-red-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
-                        $exam->show_result_to_student && $item['is_correct'] === 0,
-                    'border-orange-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
-                        $exam->show_result_to_student && is_null($item['is_correct']),
+                <div id="question-{{ $item['number'] }}" @class([
+                    'p-6 pt-10 rounded-3xl border-2 transition-all bg-white relative overflow-hidden md:scroll-mt-[160px] scroll-mt-[230px]', // Tambah pt-10 untuk ruang nomor
+                    'border-gray-200 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]',
+                    // 'border-green-100 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]' =>
+                    //     $exam->show_result_to_student && $item['is_correct'] === 1,
+                    // 'border-red-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
+                    //     $exam->show_result_to_student && $item['is_correct'] === 0,
+                    // 'border-orange-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
+                    //     $exam->show_result_to_student && is_null($item['is_correct']),
                 ])>
 
                     <div @class([
                         'absolute top-0 left-0 px-6 py-2 rounded-br-2xl font-black text-sm tracking-tighter shadow-sm',
-                        'bg-gray-100 text-gray-500' => !$exam->show_result_to_student,
-                        'bg-green-500 text-white' =>
-                            $exam->show_result_to_student && $item['is_correct'] === 1,
-                        'bg-red-500 text-white' =>
-                            $exam->show_result_to_student && $item['is_correct'] === 0,
-                        'bg-orange-500 text-white' =>
-                            $exam->show_result_to_student && is_null($item['is_correct']),
+                        'bg-gray-100 text-gray-500',
+                        // 'bg-green-500 text-white' =>
+                        //     $exam->show_result_to_student && $item['is_correct'] === 1,
+                        // 'bg-red-500 text-white' =>
+                        //     $exam->show_result_to_student && $item['is_correct'] === 0,
+                        // 'bg-orange-500 text-white' =>
+                        //     $exam->show_result_to_student && is_null($item['is_correct']),
                     ])>
                         SOAL #{{ $item['number'] }}
                     </div>
@@ -239,7 +316,7 @@
                         </span>
                     </div>
 
-                    @if ($exam->show_result_to_student)
+                    {{-- @if ($exam->show_result_to_student)
                         <div class="flex justify-between items-center my-4">
                             <div class="flex items-center gap-2">
                                 <span @class([
@@ -258,7 +335,7 @@
                                 </span>
                             </div>
                         </div>
-                    @endif
+                    @endif --}}
 
                     <div
                         class="prose max-w-none mt-6 text-gray-800 text-base font-medium leading-snug soal-content mb-4">
@@ -279,17 +356,17 @@
                                         'flex items-center gap-3 p-4 rounded-2xl border-2 transition-all',
                                         // ❌ belum boleh lihat hasil
                                         'bg-gray-50 border-gray-200 text-gray-500 opacity-60' =>
-                                            !$isSelected && !$exam->show_result_to_student,
-                                        'bg-amber-50 border-amber-200 text-amber-700 ring-2 ring-amber-100' =>
-                                            $isSelected && !$exam->show_result_to_student,
+                                            !$isSelected,
+                                        'bg-gray-50 border-gray-200 text-gray-700 ring-2 ring-gray-100' =>
+                                            $isSelected,
 
                                         // ✅ sudah boleh lihat hasil
-                                        'bg-gray-50 border-gray-100 text-gray-500 opacity-60' =>
-                                            !$isSelected && $exam->show_result_to_student,
-                                        'bg-green-50 border-green-200 text-green-700 ring-2 ring-green-100' =>
-                                            $isSelected && $exam->show_result_to_student && $item['is_correct'],
-                                        'bg-red-50 border-red-200 text-red-700 ring-2 ring-red-100' =>
-                                            $isSelected && $exam->show_result_to_student && !$item['is_correct'],
+                                        // 'bg-gray-50 border-gray-100 text-gray-500 opacity-60' =>
+                                        //     !$isSelected && $exam->show_result_to_student,
+                                        // 'bg-green-50 border-green-200 text-green-700 ring-2 ring-green-100' =>
+                                        //     $isSelected && $exam->show_result_to_student && $item['is_correct'],
+                                        // 'bg-red-50 border-red-200 text-red-700 ring-2 ring-red-100' =>
+                                        //     $isSelected && $exam->show_result_to_student && !$item['is_correct'],
                                     ])>
                                         <div @class([
                                             'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2',
@@ -297,14 +374,14 @@
                                             'bg-white border-gray-200' => !$isSelected,
 
                                             // ❌ belum show result → biru
-                                            'bg-amber-500 border-amber-500 text-white' =>
-                                                $isSelected && !$exam->show_result_to_student,
+                                            'bg-gray-500 border-gray-500 text-white' =>
+                                                $isSelected,
 
                                             // ✅ sudah show result
-                                            'bg-green-500 border-green-500 text-white' =>
-                                                $isSelected && $exam->show_result_to_student && $item['is_correct'],
-                                            'bg-red-500 border-red-500 text-white' =>
-                                                $isSelected && $exam->show_result_to_student && !$item['is_correct'],
+                                            // 'bg-green-500 border-green-500 text-white' =>
+                                            //     $isSelected && $exam->show_result_to_student && $item['is_correct'],
+                                            // 'bg-red-500 border-red-500 text-white' =>
+                                            //     $isSelected && $exam->show_result_to_student && !$item['is_correct'],
                                         ])>
                                             {{ $item['is_multiple'] ? strtoupper($key) : '' }}
                                         </div>
@@ -319,17 +396,17 @@
                             <div @class([
                                 'p-5 rounded-2xl border-2',
                                 // default (hasil disembunyikan)
-                                'bg-gray-50 border-gray-200 text-gray-500' => !$exam->show_result_to_student,
+                                'bg-gray-50 border-gray-200 text-gray-500',
 
                                 // hasil ditampilkan
-                                'bg-green-50 border-green-100 text-green-800' =>
-                                    $exam->show_result_to_student && $item['is_correct'] === 1,
+                                // 'bg-green-50 border-green-100 text-green-800' =>
+                                //     $exam->show_result_to_student && $item['is_correct'] === 1,
 
-                                'bg-red-50 border-red-100 text-red-800' =>
-                                    $exam->show_result_to_student && $item['is_correct'] === 0,
+                                // 'bg-red-50 border-red-100 text-red-800' =>
+                                //     $exam->show_result_to_student && $item['is_correct'] === 0,
 
-                                'bg-orange-50 border-orange-100 text-orange-800' =>
-                                    $exam->show_result_to_student && is_null($item['is_correct']),
+                                // 'bg-orange-50 border-orange-100 text-orange-800' =>
+                                //     $exam->show_result_to_student && is_null($item['is_correct']),
                             ])>
                                 <p class="text-[10px] uppercase font-black opacity-50 mb-2 tracking-widest">Jawaban:
                                 </p>
@@ -341,13 +418,13 @@
                         @endif
                     </div>
 
-                    @if ($exam->show_result_to_student)
+                    {{-- @if ($exam->show_result_to_student)
                         <div class="mt-6 pt-4 border-t border-gray-50 flex justify-end">
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                 Poin Diperoleh: {{ is_null($item['is_correct']) ? 'Belum dikoreksi' : $item['score'] }}
                             </span>
                         </div>
-                    @endif
+                    @endif --}}
                 </div>
             @endforeach
         </div>

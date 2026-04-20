@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
+use Illuminate\Support\HtmlString;
 
 class ExamMonitoringResource extends Resource
 {
@@ -64,22 +65,36 @@ class ExamMonitoringResource extends Resource
                 TextColumn::make('score_pg')
                     ->label('PG')
                     ->numeric(2)
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->toggleable(),
 
                 TextColumn::make('score_short_answer')
-                    ->label('Jawaban Singkat')
+                    ->label('Isian')
                     ->numeric(2)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->toggleable(),
 
                 TextColumn::make('score_essay')
                     ->label('Essay')
                     ->numeric(2)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->color(fn($state) => $state < 0 ? 'danger' : 'success')
+                    ->toggleable(),
 
                 TextColumn::make('total_score')
-                    ->label('Total')
+                    ->label('Prediksi Nilai Akhir')
                     ->weight(FontWeight::Bold)
                     ->color('primary')
+                    ->alignCenter()
+                    ->description(
+                        fn($record) =>
+                        new HtmlString('<ul class="text-[10px]">
+                        <li>
+                        ' . ($record->exam->target_max_score
+                            ? 'Skala ' . $record->exam->target_max_score
+                            : 'Poin Akumulasi') . '</li>
+                        <li>Belum termasuk nilai essay</li>
+                    </ul>')
+                    )
                     ->numeric(2)
                     ->sortable(),
 

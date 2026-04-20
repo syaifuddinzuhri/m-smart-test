@@ -69,7 +69,7 @@ trait HasExamStorage
             'system_id' => null,
         ]);
 
-        Notification::make()->title('Sesi Berakhir')->body($reason)->danger()->persistent()->send();
+        Notification::make()->title('Sesi Berakhir')->body($reason)->danger()->send();
         return redirect()->to('/student');
     }
 
@@ -144,9 +144,9 @@ trait HasExamStorage
         if (!$oldAnswer) {
             // Jika belum pernah dijawab, status siswa saat ini adalah dapet "Point Null"
             $oldScore = match (true) {
-                $q->isPg() => (float) $this->exam->point_pg_null,
-                $q->isShortAnswer() => (float) $this->exam->point_short_answer_null,
-                default => (float) $this->exam->point_essay_null
+                $q->isPg() => -(float) $this->exam->point_pg_null,
+                $q->isShortAnswer() => -(float) $this->exam->point_short_answer_null,
+                default => -(float) $this->exam->point_essay_null
             };
         } else {
             $oldScore = (float) $oldAnswer->score;
@@ -160,9 +160,9 @@ trait HasExamStorage
             // CASE A: Jawaban dikosongkan (dan tidak ragu-ragu) -> Kembali ke Point Null
             if ($isAnswerEmpty && !$isDoubtful) {
                 $newScore = match (true) {
-                    $q->isPg() => (float) $this->exam->point_pg_null,
-                    $q->isShortAnswer() => (float) $this->exam->point_short_answer_null,
-                    default => (float) $this->exam->point_essay_null
+                    $q->isPg() => -(float) $this->exam->point_pg_null,
+                    $q->isShortAnswer() => -(float) $this->exam->point_short_answer_null,
+                    default => -(float) $this->exam->point_essay_null
                 };
 
                 ExamAnswer::where('exam_session_id', $this->session->id)
@@ -186,21 +186,18 @@ trait HasExamStorage
                     $answer->selectedOptions()->sync($optionIds);
                 }
 
-                // Hitung skor berdasarkan jawaban terbaru
-                $calculated = $examService->calculateScore($answer);
-
-                // Jika essay dan belum dinilai (calculateScore return null), gunakan point_essay_null
-                $newScore = $calculated ?? (float) $this->exam->point_essay_null;
-
-                // Update record jawaban
-                $updateData = ['score' => $newScore];
-
-                // Hanya update is_correct jika BUKAN essay (biar essay tetap null)
-                if (!$q->isEssay()) {
-                    $updateData['is_correct'] = $newScore > 0;
+                if ($q->isEssay()) {
+                    // Jika Essay baru diisi (is_correct null), skor = 0 (artinya hutang pinalti lunas)
+                    // Jika sudah dikoreksi, gunakan skor yang ada.
+                    $newScore = is_null($answer->is_correct) ? 0 : (float) $answer->score;
+                } else {
+                    $newScore = $examService->calculateScore($answer) ?? 0;
                 }
 
-                $answer->update($updateData);
+                $answer->update([
+                    'score' => $newScore,
+                    'is_correct' => $q->isEssay() ? null : ($newScore > 0)
+                ]);
             }
 
             // 6. Update Sesi secara Incremental (SANGAT CEPAT)

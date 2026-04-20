@@ -10,10 +10,13 @@
     $questions = $exam->questions()->get();
     $results = app(\App\Services\ExamService::class)->getQuestions($exam, $session);
 
+    $submittedAnswersCount = \App\Models\ExamAnswer::where('exam_session_id', $session->id)->count();
+
     $totalSoal = count($results);
-    $benar = collect($results)->where('is_correct', 1)->count();
-    $salah = collect($results)->where('is_correct', 0)->count();
+    $correctAnswers = collect($results)->where('is_correct', 1)->count();
+    $wrongAnswers = collect($results)->where('is_correct', 0)->count();
     $pending = collect($results)->whereStrict('is_correct', null)->count();
+    $unanswered = max(0, $totalSoal - $submittedAnswersCount);
 @endphp
 
 
@@ -42,10 +45,15 @@
                                 'flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl font-bold text-[11px] sm:text-xs transition-all border-2',
                                 'bg-green-500 border-green-400 text-white shadow-sm shadow-green-100' =>
                                     $navItem['is_correct'] === 1,
+
                                 'bg-red-500 border-red-400 text-white shadow-sm shadow-red-100' =>
                                     $navItem['is_correct'] === 0,
-                                'bg-orange-500 border-orange-400 text-white shadow-sm shadow-orange-100' => is_null(
-                                    $navItem['is_correct']),
+
+                                'bg-yellow-500 border-yellow-400 text-white shadow-sm shadow-yellow-100' =>
+                                    is_null($navItem['is_correct']) && $navItem['has_answer'],
+
+                                'bg-gray-100 border-gray-300 text-gray-400' =>
+                                    is_null($navItem['is_correct']) && !$navItem['has_answer'],
                             ])>
                                 {{ $navItem['number'] }}
                             </a>
@@ -56,8 +64,10 @@
                 <!-- STATISTIK RINGKAS (Muncul di Mobile & Desktop) -->
                 <div class="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-gray-200">
                     <div class="flex gap-2 text-[10px] font-bold uppercase">
-                        <span class="text-green-600 bg-green-50 px-2 py-1 rounded-md">✔ {{ $benar }}</span>
-                        <span class="text-red-600 bg-red-50 px-2 py-1 rounded-md">✘ {{ $salah }}</span>
+                        <span class="text-green-600 bg-green-50 px-2 py-1 rounded-md">✔ {{ $correctAnswers }}</span>
+                        <span class="text-red-600 bg-red-50 px-2 py-1 rounded-md">✘ {{ $wrongAnswers }}</span>
+                        <span class="text-gray-600 bg-gray-50 px-2 py-1 rounded-md">!
+                            {{ $unanswered }}</span>
                         @if ($pending > 0)
                             <span class="text-orange-600 bg-orange-50 px-2 py-1 rounded-md">? {{ $pending }}</span>
                         @endif
@@ -69,20 +79,26 @@
     <div class="space-y-6">
         @foreach ($results as $item)
             <div id="question-{{ $item['number'] }}" @class([
-                'p-6 pt-10 rounded-3xl border-2 transition-all bg-white relative overflow-hidden md:scroll-mt-[220px] scroll-mt-[200px]',
+                'p-6 pt-10 rounded-3xl border-2 transition-all bg-white relative overflow-hidden md:scroll-mt-[220px] scroll-mt-[240px]',
+                'border-gray-200 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]' => !$item[
+                    'has_answer'
+                ],
                 'border-green-100 shadow-[0_10px_30px_-15px_rgba(34,197,94,0.1)]' =>
-                    $item['is_correct'] === 1,
+                    $item['is_correct'] === 1 && $item['has_answer'],
                 'border-red-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
-                    $item['is_correct'] === 0,
-                'border-orange-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' => is_null(
-                    $item['is_correct']),
+                    $item['is_correct'] === 0 && $item['has_answer'],
+                'border-orange-100 shadow-[0_10px_30px_-15px_rgba(239,68,68,0.1)]' =>
+                    is_null($item['is_correct']) && $item['has_answer'],
             ])>
 
                 <div @class([
                     'absolute top-0 left-0 px-6 py-2 rounded-br-2xl font-black text-sm tracking-tighter shadow-sm',
-                    'bg-green-500 text-white' => $item['is_correct'] === 1,
-                    'bg-red-500 text-white' => $item['is_correct'] === 0,
-                    'bg-orange-500 text-white' => is_null($item['is_correct']),
+                    'bg-gray-500 text-white' => !$item['has_answer'],
+                    'bg-green-500 text-white' =>
+                        $item['is_correct'] === 1 && $item['has_answer'],
+                    'bg-red-500 text-white' => $item['is_correct'] === 0 && $item['has_answer'],
+                    'bg-yellow-500 text-white' =>
+                        is_null($item['is_correct']) && $item['has_answer'],
                 ])>
                     SOAL #{{ $item['number'] }}
                 </div>
@@ -98,16 +114,24 @@
                     <div class="flex items-center gap-2">
                         <span @class([
                             'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider',
-                            'bg-green-50 text-green-600' => $item['is_correct'] === 1,
-                            'bg-red-50 text-red-600' => $item['is_correct'] === 0,
-                            'bg-orange-50 text-orange-600' => is_null($item['is_correct']),
+                            'bg-gray-50 text-gray-600' => !$item['has_answer'],
+                            'bg-green-50 text-green-600' =>
+                                $item['is_correct'] === 1 && $item['has_answer'],
+                            'bg-red-50 text-red-600' =>
+                                $item['is_correct'] === 0 && $item['has_answer'],
+                            'bg-yellow-50 text-yellow-600' =>
+                                is_null($item['is_correct']) && $item['has_answer'],
                         ])>
-                            @if (is_null($item['is_correct']))
-                                <x-heroicon-s-pencil class="w-4 h-4" /> Belum Dikoreksi
-                            @elseif($item['is_correct'])
-                                <x-heroicon-s-check-circle class="w-4 h-4" /> Benar
+                            @if (!$item['has_answer'])
+                                <x-heroicon-s-x-circle class="w-4 h-4" /> Tidak Dijawab
                             @else
-                                <x-heroicon-s-x-circle class="w-4 h-4" /> Salah
+                                @if (is_null($item['is_correct']))
+                                    <x-heroicon-s-pencil class="w-4 h-4" /> Belum Dikoreksi
+                                @elseif($item['is_correct'])
+                                    <x-heroicon-s-check-circle class="w-4 h-4" /> Benar
+                                @else
+                                    <x-heroicon-s-x-circle class="w-4 h-4" /> Salah
+                                @endif
                             @endif
                         </span>
                     </div>
@@ -155,12 +179,13 @@
                     @elseif($item['is_short'] || $item['is_essay'])
                         <div @class([
                             'p-5 rounded-2xl border-2',
-                            'bg-green-50 border-green-100 text-green-800' => $item['is_correct'] === 1,
-
-                            'bg-red-50 border-red-100 text-red-800' => $item['is_correct'] === 0,
-
-                            'bg-orange-50 border-orange-100 text-orange-800' => is_null(
-                                $item['is_correct']),
+                            'bg-gray-50 border-gray-100 text-gray-800' => !$item['has_answer'],
+                            'bg-green-50 border-green-100 text-green-800' =>
+                                $item['is_correct'] === 1 && $item['has_answer'],
+                            'bg-red-50 border-red-100 text-red-800' =>
+                                $item['is_correct'] === 0 && $item['has_answer'],
+                            'bg-yellow-50 border-yellow-100 text-yellow-800' =>
+                                is_null($item['is_correct']) && $item['has_answer'],
                         ])>
                             <p class="text-[10px] uppercase font-black opacity-50 mb-2 tracking-widest">Jawaban:
                             </p>
@@ -174,7 +199,29 @@
 
                 <div class="mt-6 pt-4 border-t border-gray-50 flex justify-end">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                        Poin Diperoleh: {{ is_null($item['is_correct']) ? 'Belum dikoreksi' : $item['score'] }}
+                        Poin Diperoleh:
+                        @if (!$item['has_answer'])
+                            {{-- Logika untuk Jawaban Kosong (Ambil poin pinalti & tambahkan minus di UI) --}}
+                            @php
+                                $penalty = 0;
+                                if ($item['is_pg']) {
+                                    $penalty = $item['point_pg_null'];
+                                } elseif ($item['is_short']) {
+                                    $penalty = $item['point_short_answer_null'];
+                                } elseif ($item['is_essay']) {
+                                    $penalty = $item['point_essay_null'];
+                                }
+                            @endphp
+
+                            {{-- Jika nilai penalty > 0, tambahkan minus di depan --}}
+                            {{ $penalty > 0 ? '-' : '' }}{{ number_format($penalty, 2) }}
+                        @elseif (is_null($item['is_correct']))
+                            {{-- Jika ada jawaban tapi belum dikoreksi (Essay/Isian) --}}
+                            Belum dikoreksi
+                        @else
+                            {{-- Jika sudah dikoreksi --}}
+                            {{ $item['score'] }}
+                        @endif
                     </span>
                 </div>
             </div>
