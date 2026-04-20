@@ -259,13 +259,15 @@ class ExamService
 
         $hasManualType = $questions->contains(fn($q) => $q->isShortAnswer() || $q->isEssay());
 
-        $session->update([
+        $updateData = [
             'score_pg' => $totalPg,
             'score_short_answer' => $totalShort,
             'score_essay' => $totalEssay,
             'total_score' => max(0, $finalTotal),
-        ]);
+        ];
 
+        // Jika soal di ujian hanya PG saja (tidak mengandung Short Answer atau Essay)
+        // Dan saat ini finalized_at masih kosong, maka otomatis diisi.
         if (!$hasManualType && is_null($session->finalized_at)) {
             $updateData['finalized_at'] = now();
         }
