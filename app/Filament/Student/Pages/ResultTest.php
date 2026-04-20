@@ -20,7 +20,6 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
@@ -104,19 +103,6 @@ class ResultTest extends Page implements HasTable
                     ->options(Subject::pluck('name', 'id'))
                     ->searchable()
                     ->preload(),
-                SelectFilter::make('status_lulus')
-                    ->label('Status Kelulusan')
-                    ->options([
-                        'lulus' => 'Lulus',
-                        'tidak_lulus' => 'Tidak Lulus',
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        if ($data['value'] === 'lulus') {
-                            $query->whereRaw('student_score >= passing_grade');
-                        } elseif ($data['value'] === 'tidak_lulus') {
-                            $query->whereRaw('student_score < passing_grade');
-                        }
-                    })
             ])
             ->columns(self::buildColumns())
             ->actions([
@@ -152,7 +138,7 @@ class ResultTest extends Page implements HasTable
                 ])->from('md')->extraAttributes(['class' => 'mb-1']),
 
                 TextColumn::make('finished_at')
-                    ->description(new \Illuminate\Support\HtmlString('
+                    ->description(new HtmlString('
                         <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-[-4px]">
                             Waktu Selesai
                         </span>
@@ -182,7 +168,8 @@ class ResultTest extends Page implements HasTable
                         })
                         ->badge()
                         ->color(fn($state) => $state === 'LULUS' ? 'success' : 'danger'),
-                ])->extraAttributes(['class' => 'mt-3 mb-2']),
+                ])->extraAttributes(['class' => 'mt-3 mb-2'])
+                    ->visible(fn(Exam $record) => $record->show_result_to_student)
             ])->space(2),
         ];
     }

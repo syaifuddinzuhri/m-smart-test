@@ -14,6 +14,7 @@ use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Carbon\Carbon;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Actions\BulkAction;
 
 trait HasMonitoringActions
@@ -82,7 +83,11 @@ trait HasMonitoringActions
                 static::getPauseSessionAction(),
                 static::getViewViolationsAction(),
                 static::getViewExtensionsAction(),
-            ])->icon('heroicon-m-ellipsis-vertical')
+            ])
+                ->label('Aksi')
+                ->icon('heroicon-m-ellipsis-vertical')
+                ->color('gray')
+                ->button(),
         ];
     }
 
@@ -225,6 +230,7 @@ trait HasMonitoringActions
             ->label('Tambah Durasi')
             ->icon('heroicon-m-clock')
             ->color('success')
+            ->modalWidth(MaxWidth::Medium)
             ->form([
                 TextInput::make('minutes')
                     ->label('Tambahan Waktu (Menit)')

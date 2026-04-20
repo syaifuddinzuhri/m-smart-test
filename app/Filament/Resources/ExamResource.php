@@ -318,6 +318,38 @@ class ExamResource extends Resource
                         ->icon(fn($record) => $record->status !== ExamStatus::DRAFT ? 'heroicon-m-lock-closed' : 'heroicon-m-pencil-square')
                         ->label(fn($record) => $record->status !== ExamStatus::DRAFT ? 'Lihat Detail' : 'Edit'),
                     Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\Action::make('toggleShowResult')
+                        ->label(
+                            fn(Exam $record) => $record->show_result_to_student
+                            ? 'Sembunyikan Nilai'
+                            : 'Tampilkan Nilai'
+                        )
+                        ->icon(
+                            fn(Exam $record) => $record->show_result_to_student
+                            ? 'heroicon-m-eye-slash'
+                            : 'heroicon-m-eye'
+                        )
+                        ->color(
+                            fn(Exam $record) => $record->show_result_to_student
+                            ? 'danger'
+                            : 'success'
+                        )
+                        ->requiresConfirmation()
+                        ->modalHeading(
+                            fn(Exam $record) => $record->show_result_to_student
+                            ? 'Sembunyikan Hasil Ujian?'
+                            : 'Tampilkan Hasil Ujian?'
+                        )
+                        ->modalDescription(
+                            fn(Exam $record) => $record->show_result_to_student
+                            ? 'Peserta tidak akan bisa melihat nilai mereka.'
+                            : 'Peserta akan bisa melihat nilai mereka.'
+                        )
+                        ->action(function (Exam $record) {
+                            $record->update([
+                                'show_result_to_student' => !$record->show_result_to_student,
+                            ]);
+                        }),
                 ])
                     ->label('Aksi')
                     ->icon('heroicon-m-ellipsis-vertical')
@@ -327,7 +359,8 @@ class ExamResource extends Resource
             ]);
     }
 
-    protected static function buildColumns(){
+    protected static function buildColumns()
+    {
         return [
             Tables\Columns\TextColumn::make('title')
                 ->label('Judul Ujian')
@@ -430,7 +463,7 @@ class ExamResource extends Resource
             Tables\Columns\TextColumn::make('status')
                 ->label('Status')
                 ->badge(),
-            ];
+        ];
     }
 
     protected static function buildExtensionLogHtml(Exam $record): string

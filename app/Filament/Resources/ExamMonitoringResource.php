@@ -33,6 +33,7 @@ class ExamMonitoringResource extends Resource
     protected static ?string $pluralModelLabel = 'Monitoring Ujian';
 
     protected static ?int $navigationSort = 3;
+
     public static function table(Table $table): Table
     {
         return $table
@@ -220,7 +221,8 @@ class ExamMonitoringResource extends Resource
                     static::getMonitoringBulkActions() // Memanggil method baru dari Trait
                 ),
             ])
-            ->poll('5s') // Auto refresh table setiap 10 detik untuk monitoring real-time
+            ->extremePaginationLinks()
+            ->poll('5s')
             ->defaultSort('last_activity', 'desc');
     }
 
