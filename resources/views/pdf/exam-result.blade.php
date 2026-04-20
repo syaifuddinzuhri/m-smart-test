@@ -416,6 +416,23 @@
                 <td><strong>Acak Pilihan Jawaban</strong></td>
                 <td>: {{ $exam->random_option_type ? 'Ya' : 'Tidak' }}</td>
             </tr>
+
+            <tr>
+                <td><strong>Status Finalisasi</strong></td>
+                <td colspan="3">:
+                    @if ($session->finalized_at)
+                        <span class="badge badge-success">SUDAH FINAL</span>
+                        <span style="margin-left: 8px; font-size: 11px; color: #555;">
+                            Divalidasi pada: {{ $session->finalized_at->format('d/m/Y H:i:s T') }}
+                        </span>
+                    @else
+                        <span class="badge badge-warning">BELUM FINAL</span>
+                        <span style="margin-left: 8px; font-size: 11px; color: #888; font-style: italic;">
+                            (Menunggu validasi/koreksi pengawas)
+                        </span>
+                    @endif
+                </td>
+            </tr>
         </table>
     </div>
 

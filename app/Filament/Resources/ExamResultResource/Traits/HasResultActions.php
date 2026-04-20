@@ -22,10 +22,20 @@ trait HasResultActions
     public static function getMonitoringBulkActions(): array
     {
         return [
+            BulkAction::make('bulkFinalize')
+                ->label('Finalisasi Nilai (Massal)')
+                ->icon('heroicon-o-lock-closed')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Finalisasi Nilai Massal?')
+                ->modalDescription('Semua sesi yang dipilih akan dikunci. Nilai tidak akan bisa diubah lagi setelah proses ini.')
+                ->action(fn(\Illuminate\Support\Collection $records) => static::processBulkFinalize($records))
+                ->deselectRecordsAfterCompletion(),
+
             BulkAction::make('bulkAddDuration')
                 ->label('Tambah Durasi (Massal)')
                 ->icon('heroicon-m-clock')
-                ->color('success')
+                ->color('info')
                 ->form([
                     TextInput::make('minutes')
                         ->label('Tambahan Waktu (Menit)')
@@ -39,6 +49,10 @@ trait HasResultActions
                         ->default('Penambahan Massal oleh Admin')
                         ->required(),
                 ])
+                ->visible(
+                    fn(ExamSession $record) =>
+                    $record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at
+                )
                 ->action(fn(\Illuminate\Support\Collection $records, array $data) => static::processBulkAddDuration($records, $data)),
 
             BulkAction::make('bulkReset')
@@ -48,6 +62,10 @@ trait HasResultActions
                 ->requiresConfirmation()
                 ->modalHeading('Reset Ujian Massal?')
                 ->modalDescription('Seluruh progres jawaban peserta yang dipilih akan dihapus permanen.')
+                ->visible(
+                    fn(ExamSession $record) =>
+                    $record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at
+                )
                 ->action(fn(\Illuminate\Support\Collection $records) => $records->each->delete())
                 ->after(fn() => Notification::make()->title('Ujian berhasil di-reset')->success()->send()),
         ];
@@ -60,6 +78,7 @@ trait HasResultActions
     {
         return [
             ActionGroup::make([
+                static::getFinalizeAction(),
                 static::getAddDurationAction(),
                 static::getResetAnswersAction(),
                 static::getViewViolationsAction(),
@@ -75,6 +94,41 @@ trait HasResultActions
     /* ----------------------------------------------------------- */
     /* DEFINISI KOMPONEN AKSI (UI & FORM)
     /* ----------------------------------------------------------- */
+
+    protected static function getFinalizeAction(): Action
+    {
+        return Action::make('finalize')
+            ->label('Finalisasi Nilai')
+            ->icon('heroicon-o-lock-closed')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading('Finalisasi Hasil Ujian?')
+            ->modalDescription('Setelah difinalisasi, nilai akan dikunci dan sesi tidak dapat diubah atau di-reset lagi.')
+            // HANYA MUNCUL JIKA: Sudah Selesai DAN Belum Final
+            ->visible(
+                fn(ExamSession $record) =>
+                $record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at
+            )
+            ->action(fn(ExamSession $record) => static::processFinalize($record));
+    }
+
+    protected static function processBulkFinalize(\Illuminate\Support\Collection $records): void
+    {
+        $count = 0;
+        foreach ($records as $record) {
+            // Hanya finalisasi yang statusnya sudah COMPLETED
+            if ($record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at) {
+                $record->update(['finalized_at' => now()]);
+                $count++;
+            }
+        }
+
+        Notification::make()
+            ->title('Proses Finalisasi Selesai')
+            ->body("$count data berhasil difinalisasi.")
+            ->success()
+            ->send();
+    }
 
     protected static function processBulkAddDuration(\Illuminate\Support\Collection $records, array $data): void
     {
@@ -165,7 +219,7 @@ trait HasResultActions
         return Action::make('addDuration')
             ->label('Tambah Durasi')
             ->icon('heroicon-m-clock')
-            ->color('success')
+            ->color('info')
             ->modalWidth(MaxWidth::Medium)
             ->form([
                 TextInput::make('minutes')
@@ -180,6 +234,10 @@ trait HasResultActions
                     ->placeholder('Tidak Ada Alasan')
                     ->hint('Opsional'),
             ])
+            ->visible(
+                fn(ExamSession $record) =>
+                $record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at
+            )
             ->action(fn(ExamSession $record, array $data) => static::processAddDuration($record, $data));
     }
 
@@ -205,6 +263,10 @@ trait HasResultActions
             ->requiresConfirmation()
             ->modalHeading('Reset Ujian?')
             ->modalDescription('Tindakan ini akan menghapus seluruh progres pengerjaan peserta ini.')
+            ->visible(
+                fn(ExamSession $record) =>
+                $record->status === ExamSessionStatus::COMPLETED && !$record->finalized_at
+            )
             ->action(fn(ExamSession $record) => static::processResetAnswers($record));
     }
 
@@ -277,6 +339,19 @@ trait HasResultActions
         $html .= "</div>";
 
         return $html;
+    }
+
+    protected static function processFinalize(ExamSession $record): void
+    {
+        $record->update([
+            'finalized_at' => now(),
+        ]);
+
+        Notification::make()
+            ->title('Sesi Berhasil Difinalisasi')
+            ->body("Nilai untuk {$record->user->name} telah dikunci.")
+            ->success()
+            ->send();
     }
 
     protected static function processAddDuration(ExamSession $record, array $data): void

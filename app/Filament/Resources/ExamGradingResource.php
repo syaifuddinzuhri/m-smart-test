@@ -41,7 +41,8 @@ class ExamGradingResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', ExamSessionStatus::COMPLETED);
+            ->where('status', ExamSessionStatus::COMPLETED)
+            ->whereNull('finalized_at');
     }
 
     public static function table(Tables\Table $table): Tables\Table
@@ -63,8 +64,10 @@ class ExamGradingResource extends Resource
 
                 TextColumn::make('exam.title')
                     ->label('Ujian')
-                    ->limit(30),
-
+                    ->wrap()
+                    ->extraAttributes([
+                        'class' => 'line-clamp-2',
+                    ]),
                 TextColumn::make('score_essay')
                     ->label('Poin Essay')
                     ->numeric(2)
@@ -79,7 +82,18 @@ class ExamGradingResource extends Resource
 
                 TextColumn::make('finished_at')
                     ->label('Selesai Pada')
-                    ->dateTime()
+                    ->formatStateUsing(function ($state) {
+                        if (!$state)
+                            return '-';
+
+                        return '
+                            <div class="leading-tight">
+                                <div>' . $state->format('d/m/Y') . '</div>
+                                <div class="text-xs text-gray-500">' . $state->format('H:i:s T') . '</div>
+                            </div>
+                        ';
+                    })
+                    ->html()
                     ->sortable(),
             ])
             ->filters([

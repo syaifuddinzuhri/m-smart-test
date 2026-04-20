@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class ExamResultResource extends Resource
@@ -70,15 +71,21 @@ class ExamResultResource extends Resource
                 TextColumn::make('score_pg')
                     ->label('PG')
                     ->numeric(2)
+                    ->badge()
+                    ->color('warning')
                     ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('score_short_answer')
                     ->label('Jawaban Singkat')
                     ->numeric(2)
+                    ->badge()
+                    ->color('warning')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('score_essay')
                     ->label('Essay')
+                    ->badge()
+                    ->color('warning')
                     ->numeric(2)
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -118,8 +125,41 @@ class ExamResultResource extends Resource
                         ';
                     })
                     ->html()
-                    ->html()
                     ->sortable(),
+
+                TextColumn::make('finalized_at')
+                    ->label('Status Final')
+                    ->sortable()
+                    ->alignCenter() // Tambahkan ini agar lebih rapi
+                    ->state(function ($record) {
+                        // Kita ambil langsung dari record agar lebih pasti
+                        $date = $record->finalized_at;
+
+                        if (blank($date)) {
+                            return new HtmlString('
+                                <div class="flex items-center justify-center gap-2 text-amber-500">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                    </span>
+                                    <span class="text-[11px] font-bold uppercase tracking-tight">Belum Final</span>
+                                </div>
+                            ');
+                        }
+
+                        // Jika data ada, pastikan dia Carbon
+                        $formattedDate = $date instanceof Carbon ? $date : Carbon::parse($date);
+
+                        return new HtmlString('
+                            <div class="leading-tight text-center">
+                                <div class="flex items-center justify-center gap-1 text-green-600 font-bold">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span>' . $formattedDate->format('d/m/Y') . '</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400">' . $formattedDate->format('H:i:s T') . '</div>
+                            </div>
+                        ');
+                    })
             ])
             ->filters([
                 SelectFilter::make('exam_category')
@@ -137,6 +177,21 @@ class ExamResultResource extends Resource
                     ->query(function (Builder $query, array $data) {
                         if (filled($data['value'])) {
                             $query->whereHas('user.student', fn($q) => $q->where('classroom_id', $data['value']));
+                        }
+                    }),
+
+                SelectFilter::make('status_final')
+                    ->label('Status Koreksi')
+                    ->placeholder('Semua Status')
+                    ->options([
+                        'pending' => '⏳ Belum Final',
+                        'finalized' => '✅ Sudah Final',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['value'] === 'pending') {
+                            $query->whereNull('finalized_at');
+                        } elseif ($data['value'] === 'finalized') {
+                            $query->whereNotNull('finalized_at');
                         }
                     }),
             ], layout: FiltersLayout::Modal)
@@ -157,13 +212,6 @@ class ExamResultResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Actions::make([
-                    Infolists\Components\Actions\Action::make('exportPdf')
-                        ->label('Download PDF')
-                        ->icon('heroicon-m-arrow-down-tray')
-                        ->color('danger')
-                        ->action(fn($record) => self::exportPdf($record)),
-                ])->columnSpanFull()->alignRight(),
                 Infolists\Components\Tabs::make('Detail Hasil Ujian')
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make('Informasi Ujian')
@@ -246,7 +294,36 @@ class ExamResultResource extends Resource
                                                 'TIDAK LULUS' => 'danger',
                                                 default => 'gray',
                                             })
-                                            ->weight(FontWeight::Bold)
+                                            ->weight(FontWeight::Bold),
+
+                                        Infolists\Components\TextEntry::make('finalized_at')
+                                            ->label('Status Finalisasi')
+                                            ->state(function ($record) {
+                                                if (is_null($record->finalized_at)) {
+                                                    return new HtmlString('
+                                                        <div class="flex flex-col gap-1.5">
+                                                            <div class="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800 uppercase tracking-wider">
+                                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                                BELUM FINAL
+                                                            </div>
+                                                            <span class="text-[10px] text-gray-400 italic font-medium leading-none">Menunggu finalisasi pengawas</span>
+                                                        </div>
+                                                    ');
+                                                }
+
+                                                return new HtmlString('
+                                                    <div class="flex items-center gap-1.5">
+                                                        <div class="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800 uppercase tracking-wider">
+                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                                            SUDAH FINAL
+                                                        </div>
+                                                        <div class="leading-none flex flex-col gap-0.5">
+                                                            <span class="text-[11px] font-bold text-gray-800 dark:text-gray-200">' . $record->finalized_at->format('d/m/Y') . '</span>
+                                                            <span class="text-[10px] text-gray-500 font-medium">' . $record->finalized_at->format('H:i:s T') . '</span>
+                                                        </div>
+                                                    </div>
+                                                ');
+                                            })
                                     ])->columns(4), // Menggunakan 4 kolom agar tata letak lebih rapi (akan wrap otomatis)
                                 Infolists\Components\Section::make('Waktu & Aktivitas')
                                     ->schema([

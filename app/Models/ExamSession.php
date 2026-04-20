@@ -19,6 +19,7 @@ class ExamSession extends Model
         'started_at' => 'datetime',
         'expires_at' => 'datetime',
         'finished_at' => 'datetime',
+        'finalized_at' => 'datetime',
         'last_violation_at' => 'datetime',
         'last_activity' => 'datetime',
         'extension_log' => 'array',

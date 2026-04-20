@@ -127,6 +127,10 @@ class ExamService
 
     public function manualVerify(ExamAnswer $answer, bool $isCorrect, ?float $essayScore = null): void
     {
+        if ($answer->session->finalized_at) {
+            throw new Exception("Hasil ujian ini sudah difinalisasi dan tidak dapat diubah lagi.");
+        }
+
         $answer->load(['session.exam', 'question']);
         $exam = $answer->session->exam;
         $question = $answer->question;

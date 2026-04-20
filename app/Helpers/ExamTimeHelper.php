@@ -42,6 +42,7 @@ class ExamTimeHelper
                 'status' => ExamSessionStatus::ONGOING,
                 'finished_at' => null,
                 'expires_at' => $newExpiresAt,
+                'finalized_at' => null,
                 'extension_log' => $logs // Simpan Log
             ]);
 
@@ -113,7 +114,10 @@ class ExamTimeHelper
                     // Sekarang $session sudah pasti instance of ExamSession (Model)
                     $session->update([
                         'expires_at' => $newExpiresAt,
-                        'extension_log' => $logs
+                        'extension_log' => $logs,
+                        'status' => ExamSessionStatus::ONGOING,
+                        'finished_at' => null,
+                        'finalized_at' => null,
                     ]);
                 });
         });
