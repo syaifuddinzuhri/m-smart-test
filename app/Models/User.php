@@ -19,6 +19,7 @@ class User extends Authenticatable implements FilamentUser
 
     protected $casts = [
         'role' => UserRole::class,
+        'is_system' => 'boolean',
         'is_active' => 'boolean',
     ];
 
