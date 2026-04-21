@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\UserRole;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,6 +16,14 @@ Route::get('/login', function () {
     }
     return redirect('/'); // Kirim ke Landing Page untuk pilih Login
 })->name('login');
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect('/');
+})->name('logout');
 
 
 Route::get('/pandoc', function () {
