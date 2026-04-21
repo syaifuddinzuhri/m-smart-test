@@ -35,7 +35,7 @@ class ExamGradingResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Penilaian Manual Ujian';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     // Hanya tampilkan session yang sudah COMPLETED
     public static function getEloquentQuery(): Builder

@@ -38,7 +38,7 @@ class ExamResultResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Hasil Ujian';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
     // QUERY UTAMA: Hanya ambil yang statusnya COMPLETED
     public static function getEloquentQuery(): Builder
