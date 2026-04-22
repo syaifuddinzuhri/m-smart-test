@@ -74,6 +74,14 @@ class StudentPanelProvider extends PanelProvider
                 fn() => view('components.login-footer'),
             )
             ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
+                fn(): string => Blade::render('filament.student.components.security-styles'),
+            )
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn(): string => Blade::render('filament.student.components.security-scripts'),
+            )
+            ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn() => view('components.footer'),
             )
