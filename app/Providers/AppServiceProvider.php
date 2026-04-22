@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         date_default_timezone_set('Asia/Jakarta'); // WIB
         Carbon::setLocale('id'); // Bahasa Indonesia
         FilamentView::registerRenderHook(
