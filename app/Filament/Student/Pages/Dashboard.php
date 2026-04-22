@@ -7,6 +7,7 @@ use App\Models\ExamSession;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class Dashboard extends BaseDashboard
 {
@@ -21,6 +22,23 @@ class Dashboard extends BaseDashboard
     public function getHeading(): string|Htmlable
     {
         return '';
+    }
+
+    public $lastSnapshotUrl = null;
+
+    // Method untuk menerima snapshot dari JS
+    public function uploadSnapshot($imageData)
+    {
+        $image = str_replace('data:image/jpeg;base64,', '', $imageData);
+        $image = str_replace(' ', '+', $image);
+        $imageName = 'test_snapshot_' . auth()->id() . '.jpg';
+
+        Storage::disk('public')->put('snapshots/' . $imageName, base64_decode($image));
+
+        $this->lastSnapshotUrl = asset('storage/snapshots/' . $imageName) . '?v=' . time();
+
+        // Opsional: Beri notifikasi kecil
+        // $this->dispatch('snapshot-uploaded');
     }
 
     public function mount()
