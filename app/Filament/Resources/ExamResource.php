@@ -87,7 +87,11 @@ class ExamResource extends Resource
                                     ->native(false)
                                     ->displayFormat('d/m/Y H:i')
                                     ->format('Y-m-d H:i:00')
-                                    ->seconds(false),
+                                    ->seconds(false)
+                                    ->afterOrEqual(now()->startOfMinute())
+                                    ->validationMessages([
+                                        'after_or_equal' => 'Waktu mulai tidak boleh kurang dari waktu sekarang.',
+                                    ]),
 
                                 DateTimePicker::make('end_time')
                                     ->label('Waktu Selesai')
@@ -95,7 +99,11 @@ class ExamResource extends Resource
                                     ->native(false)
                                     ->displayFormat('d/m/Y H:i')
                                     ->format('Y-m-d H:i:00')
-                                    ->seconds(false),
+                                    ->seconds(false)
+                                    ->after('start_time')
+                                    ->validationMessages([
+                                        'after' => 'Waktu selesai harus lebih besar dari waktu mulai.',
+                                    ]),
                             ])->columns(2),
 
                         Tab::make('Target Peserta')
@@ -303,7 +311,7 @@ class ExamResource extends Resource
                             ]),
                     ])->columnSpanFull(),
             ])
-            ->disabled(fn(?Exam $record) => $record && $record?->status !== ExamStatus::DRAFT);
+            ->disabled(fn(?Exam $record) => $record && $record?->is_lock);
     }
 
     protected static function updateTitle(Set $set, Get $get): void
@@ -404,7 +412,7 @@ class ExamResource extends Resource
                     Tables\Actions\Action::make('viewExtensions')
                         ->label('Riwayat Tambahan Waktu')
                         ->icon('heroicon-m-clock')
-                        ->color('warning')
+                        ->color('gray')
                         ->modalHeading('Riwayat Tambahan Waktu')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
@@ -413,42 +421,55 @@ class ExamResource extends Resource
                                 ->label('')
                                 ->content(new HtmlString(static::buildExtensionLogHtml($record))),
                         ]),
-                    Tables\Actions\EditAction::make()
-                        ->icon(fn($record) => $record->status !== ExamStatus::DRAFT ? 'heroicon-m-lock-closed' : 'heroicon-m-pencil-square')
-                        ->label(fn($record) => $record->status !== ExamStatus::DRAFT ? 'Lihat Detail' : 'Edit'),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\Action::make('lockExam')
+                        ->label('Kunci Ujian')
+                        ->icon('heroicon-m-lock-closed')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Kunci ujian untuk diterbitkan ke peserta')
+                        ->modalDescription('Setelah kunci ujian tidak dapat mengubah data ujian ini.')
+                        ->action(function (Exam $record) {
+                            $record->update([
+                                'is_lock' => true,
+                            ]);
+                        })
+                        ->visible(fn(Exam $record) => !$record->is_lock),
                     Tables\Actions\Action::make('toggleShowResult')
                         ->label(
                             fn(Exam $record) => $record->show_result_to_student
-                            ? 'Sembunyikan Hasil'
-                            : 'Tampilkan Hasil'
+                                ? 'Sembunyikan Hasil'
+                                : 'Tampilkan Hasil'
                         )
                         ->icon(
                             fn(Exam $record) => $record->show_result_to_student
-                            ? 'heroicon-m-eye-slash'
-                            : 'heroicon-m-eye'
+                                ? 'heroicon-m-eye-slash'
+                                : 'heroicon-m-eye'
                         )
                         ->color(
                             fn(Exam $record) => $record->show_result_to_student
-                            ? 'danger'
-                            : 'success'
+                                ? 'danger'
+                                : 'warning'
                         )
                         ->requiresConfirmation()
                         ->modalHeading(
                             fn(Exam $record) => $record->show_result_to_student
-                            ? 'Sembunyikan Hasil Ujian?'
-                            : 'Tampilkan Hasil Ujian?'
+                                ? 'Sembunyikan Hasil Ujian?'
+                                : 'Tampilkan Hasil Ujian?'
                         )
                         ->modalDescription(
                             fn(Exam $record) => $record->show_result_to_student
-                            ? 'Peserta tidak akan bisa melihat nilai mereka.'
-                            : 'Peserta akan bisa melihat nilai mereka.'
+                                ? 'Peserta tidak akan bisa melihat nilai mereka.'
+                                : 'Peserta akan bisa melihat nilai mereka.'
                         )
                         ->action(function (Exam $record) {
                             $record->update([
                                 'show_result_to_student' => !$record->show_result_to_student,
                             ]);
                         }),
+                    Tables\Actions\EditAction::make()
+                        ->icon(fn($record) => $record->is_lock ? 'heroicon-m-eye' : 'heroicon-m-pencil-square')
+                        ->label(fn($record) => $record->is_lock ? 'Lihat Detail Ujian' : 'Edit Ujian'),
+                    Tables\Actions\DeleteAction::make(),
                 ])
                     ->label('Aksi')
                     ->icon('heroicon-m-ellipsis-vertical')
@@ -562,6 +583,11 @@ class ExamResource extends Resource
             Tables\Columns\TextColumn::make('status')
                 ->label('Status')
                 ->badge(),
+            Tables\Columns\TextColumn::make('is_lock')
+                ->label('Kunci Ujian')
+                ->badge()
+                ->color(fn(bool $state): string => $state ? 'danger' : 'success')
+                ->formatStateUsing(fn(bool $state): string => $state ? 'Locked' : 'Unlocked'),
         ];
     }
 

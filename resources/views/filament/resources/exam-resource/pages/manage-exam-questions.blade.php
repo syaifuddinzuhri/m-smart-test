@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     @php
-        $isForbidden = $record->status !== \App\Enums\ExamStatus::DRAFT;
+        $isForbidden = $record->is_lock;
     @endphp
     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -261,7 +261,7 @@
                     <x-heroicon-m-arrows-up-down class="w-3.5 h-3.5 text-blue-600" />
                     <p class="text-[9px] font-bold text-blue-700 uppercase tracking-tighter">
                         Urutan Default: Pilihan Ganda & Benar Salah <span class="mx-1 text-blue-300">&rarr;</span>
-                        Jawaban
+                        Isian
                         Singkat <span class="mx-1 text-blue-300">&rarr;</span> Essay
                     </p>
                 </div>

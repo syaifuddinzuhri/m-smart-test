@@ -10,6 +10,7 @@ use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Auth\Login as BaseLogin;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin

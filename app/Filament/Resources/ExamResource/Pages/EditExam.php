@@ -93,7 +93,7 @@ class EditExam extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        if ($this->getRecord()->status !== ExamStatus::DRAFT) {
+        if ($this->getRecord()->is_lock) {
             return 'Detail Ujian';
         }
 
@@ -108,7 +108,7 @@ class EditExam extends EditRecord
         // Ambil kunci terakhir dari array breadcrumb (biasanya label halaman aktif)
         $lastStep = array_key_last($breadcrumb);
 
-        if ($this->getRecord()->status !== ExamStatus::DRAFT) {
+        if ($this->getRecord()->is_lock) {
             $breadcrumb[$lastStep] = 'Detail';
         } else {
             $breadcrumb[$lastStep] = 'Ubah';
@@ -119,7 +119,7 @@ class EditExam extends EditRecord
 
     protected function getFormActions(): array
     {
-        if ($this->getRecord()->status !== ExamStatus::DRAFT) {
+        if ($this->getRecord()->is_lock) {
             return [];
         }
 

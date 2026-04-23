@@ -21,6 +21,7 @@ class Exam extends Model
         'end_time' => 'datetime',
         'target_max_score' => 'integer',
         'show_result_to_student' => 'boolean',
+        'is_lock' => 'boolean',
         'extension_log' => 'array',
     ];
 

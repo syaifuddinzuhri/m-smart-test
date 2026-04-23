@@ -6,7 +6,9 @@ use App\Enums\ExamSessionStatus;
 use App\Enums\ExamStatus;
 use App\Enums\ExamTokenType;
 use App\Interfaces\ExamRepositoryInterface;
+use App\Models\Classroom;
 use App\Models\Exam;
+use App\Models\ExamClassroom;
 use App\Models\ExamQuestion;
 use App\Models\ExamSession;
 use App\Models\ExamToken;
@@ -25,6 +27,7 @@ class ExamRepository implements ExamRepositoryInterface
 
         $query = Exam::query()
             ->with(['category', 'subject'])
+            ->where('is_lock', true)
             ->whereHas('classrooms', function ($query) use ($classroomId) {
                 $query->where('classroom_id', $classroomId);
             })
@@ -49,6 +52,28 @@ class ExamRepository implements ExamRepositoryInterface
 
             default => $query
         };
+
+        $query->addSelect([
+            'finished_at' => ExamSession::select('finished_at')
+                ->whereColumn('exam_id', 'exams.id')
+                ->where('user_id', $user->id)
+                ->latest()
+                ->take(1),
+            'student_score' => ExamSession::select('total_score')
+                ->whereColumn('exam_id', 'exams.id')
+                ->where('user_id', $user->id)
+                ->latest()
+                ->take(1),
+            'passing_grade' => ExamClassroom::select('min_total_score')
+                ->whereColumn('exam_id', 'exams.id')
+                ->where('classroom_id', $classroomId)
+                ->take(1),
+            'target_classroom' => Classroom::query()
+                ->join('majors', 'classrooms.major_id', '=', 'majors.id')
+                ->where('classrooms.id', $classroomId)
+                ->selectRaw("CONCAT(classrooms.name, ' - ', majors.name)")
+                ->take(1),
+        ]);
 
         $query->with([
             'sessions' => function ($query) use ($user) {

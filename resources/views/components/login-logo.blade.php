@@ -65,7 +65,7 @@
             : 'bg-orange-100 text-orange-700 border border-orange-200' }}">
         <span class="mr-1.5 flex h-2 w-2">
             <span
-                class="animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 {{ !$isAdmin ? 'bg-emerald-400' : 'bg-blue-400' }}"></span>
+                class="animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 {{ $isAdmin ? 'bg-emerald-400' : 'bg-orange-400' }}"></span>
             <span
                 class="relative inline-flex rounded-full h-2 w-2 {{ $isAdmin ? 'bg-emerald-500' : 'bg-orange-500' }}"></span>
         </span>

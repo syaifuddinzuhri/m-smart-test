@@ -139,6 +139,18 @@ class InputToken extends Page implements HasForms
             return;
         }
 
+        $activeExamSession = ExamSession::where('user_id', $user->id)
+            ->whereIn('status', [ExamSessionStatus::ONGOING, ExamSessionStatus::PAUSE])
+            ->exists();
+
+        if ($activeExamSession) {
+            Notification::make()
+                ->title('Masih terdapat ujian yang berlangsung')
+                ->danger()
+                ->send();
+            return;
+        }
+
         try {
             $tokenSession = DB::transaction(function () use ($validToken, $maxAllowed, $user) {
                 $rowsAffected = ExamToken::where('id', $validToken->id)
@@ -166,7 +178,6 @@ class InputToken extends Page implements HasForms
                 ->danger()
                 ->send();
         }
-
     }
 
     private function initializeExamSession(User $user)
@@ -240,7 +251,6 @@ class InputToken extends Page implements HasForms
                 'score_essay' => $initialEssay,
                 'total_score' => 0,
             ]);
-
         }
 
         $session->fill($updateData);

@@ -35,6 +35,7 @@ class ActiveExamsTable extends BaseWidget
                         $query->where('user_id', $user->id)
                             ->where('status', ExamSessionStatus::COMPLETED);
                     })
+                    ->where('is_lock', true)
                     ->where(function ($query) use ($user) {
                         // Kondisi 1: Tampilkan jika ACTIVE
                         $query->where('status', ExamStatus::ACTIVE->value)
