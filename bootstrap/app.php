@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: '',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
         $middleware->statefulApi();
         $middleware->encryptCookies(except: [
             'ms_admin_session',
