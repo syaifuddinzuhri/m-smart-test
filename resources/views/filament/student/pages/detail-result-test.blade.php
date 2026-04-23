@@ -185,7 +185,7 @@
                             <p class="text-sm font-bold text-gray-700">{{ $stats['count_pg'] }}</p>
                         </div>
                         <div class="px-3 md:px-5 py-1 md:py-3 bg-gray-50 rounded-lg border border-gray-100">
-                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">Jawaban Singkat
+                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">Isian Singkat
                             </p>
                             <p class="text-sm font-bold text-gray-700">{{ $stats['count_short'] }}</p>
                         </div>

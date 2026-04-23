@@ -12,11 +12,11 @@ class QuestionShortWordTemplateExport
         $phpWord = new PhpWord();
         $section = $phpWord->addSection();
 
-        $section->addText("PETUNJUK PENGISIAN SOAL JAWABAN SINGKAT", ['bold' => true, 'size' => 14]);
+        $section->addText("PETUNJUK PENGISIAN SOAL ISIAN SINGKAT", ['bold' => true, 'size' => 14]);
         $section->addListItem("Tulis teks SOAL pada kolom SOAL.");
         $section->addListItem("Tulis jawaban yang benar pada kolom KUNCI JAWABAN.");
         $section->addListItem("Gunakan tanda | sebagai pemisah jika terdapat lebih dari satu jawaban benar (Contoh: Soekarno|Ir. Soekarno).");
-        $section->addListItem("Jawaban singkat biasanya berupa satu kata atau frase pendek.");
+        $section->addListItem("Isian singkat biasanya berupa satu kata atau frase pendek.");
         $section->addListItem("Satu baris mewakili satu nomor soal.");
         $section->addTextBreak(1);
 

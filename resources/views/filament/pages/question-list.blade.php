@@ -17,7 +17,7 @@
 
         <x-filament::card class="text-center">
             <div class="text-2xl font-bold text-blue-600">{{ $summary['short'] }}</div>
-            <div class="text-sm text-gray-500">Jawaban Singkat</div>
+            <div class="text-sm text-gray-500">Isian Singkat</div>
         </x-filament::card>
 
         <x-filament::card class="text-center">
@@ -51,7 +51,7 @@
 
                     <button @click="tab='short'" :class="tab === 'short' ? 'bg-blue-600 text-white' : 'bg-gray-100'"
                         class="px-4 py-2 rounded-xl text-sm font-medium">
-                        Jawaban Singkat
+                        Isian Singkat
                     </button>
 
                     <button @click="tab='essay'"

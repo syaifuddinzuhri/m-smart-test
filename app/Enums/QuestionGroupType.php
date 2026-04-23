@@ -14,7 +14,7 @@ enum QuestionGroupType: string
         return match ($this) {
             self::PG => 'Pilihan Ganda',
             self::TF => 'Benar / Salah',
-            self::SHORT => 'Jawaban Singkat',
+            self::SHORT => 'Isian Singkat',
         };
     }
 
@@ -41,7 +41,7 @@ enum QuestionGroupType: string
         return match ($this) {
             self::PG => 'PETUNJUK PENGISIAN SOAL PILIHAN GANDA',
             self::TF => 'PETUNJUK PENGISIAN SOAL BENAR/SALAH',
-            self::SHORT => 'PETUNJUK PENGISIAN SOAL JAWABAN SINGKAT',
+            self::SHORT => 'PETUNJUK PENGISIAN SOAL ISIAN SINGKAT',
         };
     }
 }

@@ -191,8 +191,7 @@ class ExamResource extends Resource
                                                     ]),
                                             ])->columnSpan(1),
 
-                                        // --- SEKSI JAWABAN SINGKAT ---
-                                        Section::make('Jawaban Singkat')
+                                        Section::make('Isian Singkat')
                                             ->schema([
                                                 TextInput::make('point_short_answer')
                                                     ->label('Poin Benar')

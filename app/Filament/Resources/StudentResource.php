@@ -178,6 +178,8 @@ class StudentResource extends Resource
                                     ->where('user_id', $record->user->id)
                                     ->delete();
 
+                                $record->user->tokens()->delete();
+
                                 Notification::make()
                                     ->title('Sesi ' . $record->user->name . ' berhasil direset')
                                     ->success()

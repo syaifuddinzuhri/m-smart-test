@@ -180,7 +180,7 @@
                                             <div class="w-2 h-2 rounded-full bg-blue-500"></div>
                                             <p
                                                 class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter leading-none">
-                                                Jawaban Singkat</p>
+                                                Isian Singkat</p>
                                         </div>
                                         <div>
                                             <h3 class="text-2xl font-black text-gray-800">{{ $summary['short'] }}</h3>
@@ -313,7 +313,7 @@
                         <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><x-heroicon-m-pencil class="w-4 h-4" />
                         </div>
                         <div>
-                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none">Jawaban Singkat</p>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase leading-none">Isian Singkat</p>
                             <p class="text-lg font-black text-blue-600">{{ $selectedSummary['short'] }}</p>
                         </div>
                     </div>

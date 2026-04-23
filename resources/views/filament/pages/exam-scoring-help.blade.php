@@ -10,7 +10,7 @@
             </ul>
         </div>
         <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-            <h4 class="font-bold text-xs uppercase text-green-600 mb-2">Jawaban Singkat (5)</h4>
+            <h4 class="font-bold text-xs uppercase text-green-600 mb-2">Isian Singkat (5)</h4>
             <ul class="text-[11px] space-y-1">
                 <li>Benar: <span class="font-bold">+2.00</span></li>
                 <li>Salah: <span class="font-bold">0.00</span></li>

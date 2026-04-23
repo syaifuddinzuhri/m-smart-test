@@ -21,7 +21,7 @@ enum QuestionType: string implements HasLabel
             self::SINGLE_CHOICE => 'Pilihan Ganda (Satu Jawaban)',
             self::MULTIPLE_CHOICE => 'Pilihan Ganda (Banyak Jawaban)',
             self::TRUE_FALSE => 'Benar / Salah',
-            self::SHORT_ANSWER => 'Jawaban Singkat',
+            self::SHORT_ANSWER => 'Isian Singkat',
             self::ESSAY => 'Essay / Uraian',
         };
     }

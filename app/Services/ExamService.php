@@ -435,7 +435,7 @@ class ExamService
                 $question->isSingleChoice() => 'Pilihan Ganda (Satu Jawaban)',
                 $question->isMultipleChoice() => 'Pilihan Ganda (Multi Jawaban)',
                 $question->isTrueFalse() => 'Pilihan Ganda (Benar Salah)',
-                $question->isShortAnswer() => 'Jawaban Singkat',
+                $question->isShortAnswer() => 'Isian Singkat',
                 $question->isEssay() => 'Essay',
                 default => '-'
             };

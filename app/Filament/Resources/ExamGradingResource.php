@@ -160,7 +160,7 @@ class ExamGradingResource extends Resource
                                         <div>
                                             <span class='font-bold italic underline mb-1 block'>Panduan Penilaian Manual:</span>
                                             <ul class='mt-1.5 list-disc list-inside space-y-1'>
-                                                <li><span class='font-bold text-blue-900'>Jawaban Singkat:</span> Sistem sudah melakukan pencocokan teks secara otomatis. Anda hanya perlu memverifikasi jika ada ambiguitas.</li>
+                                                <li><span class='font-bold text-blue-900'>Isian Singkat:</span> Sistem sudah melakukan pencocokan teks secara otomatis. Anda hanya perlu memverifikasi jika ada ambiguitas.</li>
                                                 <li><span class='font-bold text-amber-900'>Essay:</span> Cukup masukkan skor angka. Sistem akan otomatis menandai soal sebagai <span class='italic'>Benar</span> jika skor di atas 0, dan <span class='italic'>Salah</span> jika skor 0.</li>
                                             </ul>
                                         </div>
@@ -178,7 +178,7 @@ class ExamGradingResource extends Resource
                                 ($answer->question->isEssay()
                                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400') . "'>
-            " . ($answer->question->isEssay() ? 'Essay' : 'Jawaban Singkat') . "
+            " . ($answer->question->isEssay() ? 'Essay' : 'Isian Singkat') . "
         </span>
     </div>
 "))
@@ -197,7 +197,7 @@ class ExamGradingResource extends Resource
 
                                     Forms\Components\Placeholder::make('kunci_jawaban')
                                         ->label('Kunci Jawaban (Referensi):')
-                                        ->visible($answer->question->isShortAnswer()) // Hanya muncul di Jawaban Singkat
+                                        ->visible($answer->question->isShortAnswer()) // Hanya muncul di Isian Singkat
                                         ->content(function () use ($answer) {
                                             // Pecah kunci jawaban jika ada lebih dari satu (separator |)
                                             $keys = explode('|', $answer->question->correct_answer_text ?? '');
@@ -234,7 +234,7 @@ class ExamGradingResource extends Resource
 
                         if ($answers->isEmpty()) {
                             $fields[] = Forms\Components\Placeholder::make('empty')
-                                ->content('Tidak ada soal Essay atau Jawaban Singkat untuk dinilai.');
+                                ->content('Tidak ada soal Essay atau Isian Singkat untuk dinilai.');
                         }
 
                         return $fields;

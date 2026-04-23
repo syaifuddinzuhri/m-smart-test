@@ -17,7 +17,7 @@ class QuestionShortExcelTemplateExport implements FromArray, WithHeadings, WithE
     public function headings(): array
     {
         return [
-            ['PETUNJUK PENGISIAN SOAL JAWABAN SINGKAT'],
+            ['PETUNJUK PENGISIAN SOAL ISIAN SINGKAT'],
             ['1. Kolom NO diisi dengan nomor urut soal (sudah tersedia 1-50).'],
             ['2. Tulis teks SOAL pada kolom yang tersedia.'],
             ['3. Tulis jawaban benar pada kolom KUNCI JAWABAN.'],

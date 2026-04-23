@@ -239,7 +239,7 @@ class ExamResultResource extends Resource
                                             ->label('Pilihan Ganda')
                                             ->weight(FontWeight::Bold),
                                         Infolists\Components\TextEntry::make('score_short_answer')
-                                            ->label('Jawaban Singkat')
+                                            ->label('Isian Singkat')
                                             ->weight(FontWeight::Bold),
                                         Infolists\Components\TextEntry::make('score_essay')
                                             ->label('Essay')
