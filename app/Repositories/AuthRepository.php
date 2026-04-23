@@ -2,12 +2,15 @@
 
 namespace App\Repositories;
 
+use App\Enums\ExamSessionStatus;
 use App\Enums\UserRole;
 use App\Http\Resources\UserResource;
 use App\Interfaces\AuthRepositoryInterface;
+use App\Models\ExamSession;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -27,9 +30,22 @@ class AuthRepository implements AuthRepositoryInterface
             throw new Exception('Akun Anda sedang aktif di perangkat lain. Silakan logout terlebih dahulu.');
         }
 
-        $user->tokens()->delete();
+        $token = DB::transaction(function () use ($user) {
+            ExamSession::where('user_id', $user->id)
+                ->where('status', '!=', ExamSessionStatus::COMPLETED)
+                ->update([
+                    'token' => null,
+                    'system_id' => null,
+                    'status' => DB::raw("CASE
+                    WHEN status = '" . ExamSessionStatus::ONGOING->value . "' THEN '" . ExamSessionStatus::PAUSE->value . "'
+                    ELSE status
+                END")
+                ]);
 
-        $token = $user->createToken('auth_token_mobile')->plainTextToken;
+            $user->tokens()->delete();
+            $token = $user->createToken('auth_token_mobile')->plainTextToken;
+            return $token;
+        });
 
         return [
             'user' => new UserResource($user->load(['student.classroom.major'])),

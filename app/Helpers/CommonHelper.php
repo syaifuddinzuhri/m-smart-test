@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -194,5 +195,16 @@ if (!function_exists('format_exam_range')) {
             'start' => $start->translatedFormat('d F Y, H:i'),
             'end' => $end->translatedFormat('d F Y, H:i T'),
         ];
+    }
+}
+
+if (!function_exists('auth_api')) {
+    function auth_api()
+    {
+        $user = Auth::guard('api')->user();
+        if ($user) {
+            $user->load(['student.classroom.major']);
+        }
+        return $user;
     }
 }

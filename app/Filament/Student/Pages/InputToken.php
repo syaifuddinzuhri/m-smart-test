@@ -184,7 +184,7 @@ class InputToken extends Page implements HasForms
 
         if ($session->violation_count >= 5) {
             $session->update(['status' => ExamSessionStatus::PAUSE]);
-            throw new ExecException("Anda terlalu sering keluar atau melanggar ketentuan ujain. Hubungi pengawas agar ditindak lanjut");
+            throw new Exception("Anda terlalu sering keluar atau melanggar ketentuan ujain. Hubungi pengawas agar ditindak lanjut");
         }
 
         $plainToken = Str::random(64);

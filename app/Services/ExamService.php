@@ -2,15 +2,100 @@
 
 namespace App\Services;
 
+use App\Enums\ExamSessionStatus;
 use App\Models\ExamAnswer;
 use App\Models\ExamSession;
 use App\Enums\QuestionType;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
+use App\Models\User;
 use Exception;
+use Illuminate\Support\Str;
 
 class ExamService
 {
+    // INITIAL SESSION
+    public function initializeExamSession(User $user, Exam $exam)
+    {
+        $exam->loadMissing(['questions']);
+
+        $userId = $user->id;
+        $examId = $exam->id;
+
+        $session = ExamSession::firstOrNew(
+            ['exam_id' => $examId, 'user_id' => $userId]
+        );
+
+        if ($session->exists && $session->status === ExamSessionStatus::COMPLETED) {
+            throw new Exception("Anda sudah menyelesaikan ujian ini.");
+        }
+
+        if ($session->violation_count >= 5) {
+            $session->update(['status' => ExamSessionStatus::PAUSE]);
+            throw new Exception("Anda terlalu sering keluar atau melanggar ketentuan ujain. Hubungi pengawas agar ditindak lanjut");
+        }
+
+        $plainToken = Str::random(64);
+        $tokenHash = hash('sha256', $plainToken);
+
+        $updateData = [
+            'token' => $tokenHash,
+            'system_id' => generate_exam_system_id($tokenHash),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'device_type' => getDeviceInfo(),
+            'status' => ExamSessionStatus::ONGOING->value,
+        ];
+
+        if (!$session->started_at) {
+            $uniqueQuestionSeed = crc32($userId . $examId . 'question' . now()->timestamp);
+            $uniqueOptionSeed = crc32($userId . $examId . 'option' . now()->timestamp);
+
+            $sessionExtensionLog = $session->extension_log ?? [];
+
+            if (count($sessionExtensionLog) > 0) {
+                $additional = collect($sessionExtensionLog)->sum('minutes');
+            } else {
+                $additional = collect($exam->extension_log ?? [])->sum('minutes');
+            }
+
+            /**
+             * LOGIKA INISIALISASI PINALTI (HUTANG POIN)
+             * Menghitung total pinalti awal berdasarkan jumlah soal
+             */
+            $initialPg = 0;
+            $initialShort = 0;
+            $initialEssay = 0;
+
+            foreach ($exam->questions as $q) {
+                if ($q->isPg()) {
+                    $initialPg -= (float) $exam->point_pg_null;
+                } elseif ($q->isShortAnswer()) {
+                    $initialShort -= (float) $exam->point_short_answer_null;
+                } elseif ($q->isEssay()) {
+                    $initialEssay -= (float) $exam->point_essay_null;
+                }
+            }
+
+            $updateData = array_merge($updateData, [
+                'started_at' => now(),
+                'expires_at' => now()->addMinutes($exam->duration + $additional),
+                'question_seed' => $uniqueQuestionSeed,
+                'option_seed' => $uniqueOptionSeed,
+                'score_pg' => $initialPg,
+                'score_short_answer' => $initialShort,
+                'score_essay' => $initialEssay,
+                'total_score' => 0,
+            ]);
+
+        }
+
+        $session->fill($updateData);
+        $session->save();
+
+        return $plainToken;
+    }
+
     /**
      * Hitung total poin maksimal yang bisa didapat dari sebuah ujian.
      * Digunakan sebagai pembagi untuk normalisasi skor (misal ke skala 100).
