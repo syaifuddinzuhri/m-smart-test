@@ -58,6 +58,18 @@ class ExamController extends Controller
             throw $e;
         }
     }
+
+
+    public function pauseExamSessions(Request $request)
+    {
+        try {
+            $result = $this->examRepo->pauseExamSessions();
+            return response()->success($result);
+        } catch (Throwable $e) {
+            throw $e;
+        }
+    }
+
     public function getExamSession(Request $request, Exam $exam)
     {
         try {

@@ -208,6 +208,17 @@ class ExamRepository implements ExamRepositoryInterface
             ]);
     }
 
+    public function pauseExamSessions()
+    {
+        ExamSession::where('user_id', auth_api()->id)
+            ->where('status', ExamSessionStatus::ONGOING)
+            ->update([
+                'token' => null,
+                'system_id' => null,
+                'status' => ExamSessionStatus::PAUSE
+            ]);
+    }
+
     public function getExamSession(Exam $exam)
     {
         return ExamSession::with(['exam.subject', 'exam.category'])

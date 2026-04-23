@@ -23,6 +23,7 @@ Route::domain($apiDomain)->group(function () {
             Route::prefix('exams')->group(function () {
                 Route::get('/', [ExamController::class, 'index']);
                 Route::get('/questions', [ExamController::class, 'getExamQuestions']);
+                Route::post('/pause-sessions', [ExamController::class, 'pauseExamSessions']);
                 Route::post('/{exam}/start-session', [ExamController::class, 'startExamSession']);
                 Route::post('/{exam}/pause-session', [ExamController::class, 'pauseExamSession']);
                 Route::get('/{exam}/session', [ExamController::class, 'getExamSession']);

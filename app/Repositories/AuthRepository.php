@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Enums\ExamSessionStatus;
+use App\Enums\ExamStatus;
 use App\Enums\UserRole;
 use App\Http\Resources\UserResource;
 use App\Interfaces\AuthRepositoryInterface;
@@ -81,7 +82,22 @@ class AuthRepository implements AuthRepositoryInterface
         $exams_pending = Exam::whereHas('classrooms', function ($q) use ($user) {
             $q->where('classroom_id', $user->student?->classroom_id);
         })
+            ->where('is_lock', true)
             ->whereNotIn('id', $startedExamIds)
+            ->where(function ($query) use ($user) {
+                // Kondisi 1: Tampilkan jika ACTIVE
+                $query->where('status', ExamStatus::ACTIVE->value)
+                    ->where('start_time', '<=', now())
+                    // Optional: Ujian active tetap muncu jika sudah punya sesi meski end_time lewat
+                    ->where(fn($q) => $q->where('end_time', '>=', now())
+                        ->orWhereHas('sessions', fn($s) => $s->where('user_id', $user->id)));
+
+                // Kondisi 2: Tampilkan jika INACTIVE tapi peserta SUDAH PUNYA SESSION
+                $query->orWhere(function ($sub) use ($user) {
+                    $sub->where('status', ExamStatus::INACTIVE->value)
+                        ->whereHas('sessions', fn($s) => $s->where('user_id', $user->id));
+                });
+            })
             ->count();
 
         $highest_score = ExamSession::where('user_id', $user->id)
