@@ -18,8 +18,8 @@ class DynamicSessionCookie
     {
         $host = $request->getHost();
 
-        $adminHost = str_replace(['http://', 'https://'], '', config('app.admin_url'));
-        $studentHost = str_replace(['http://', 'https://'], '', config('app.student_url'));
+        $adminHost = str_replace(['http://', 'https://'], '', config('app.admin_domain'));
+        $studentHost = str_replace(['http://', 'https://'], '', config('app.student_domain'));
 
         if ($host === $adminHost) {
             Config::set('session.cookie', 'ms_admin_session');

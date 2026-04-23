@@ -34,7 +34,7 @@ class StudentPanelProvider extends PanelProvider
     {
         return $panel
             ->id(PanelType::STUDENT->value)
-            ->domain(str_replace(['http://', 'https://'], '', config('app.student_url')))
+            ->domain(str_replace(['http://', 'https://'], '', config('app.student_domain')))
             ->path('')
             ->darkMode(false)
             ->authGuard('web')

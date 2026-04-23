@@ -36,7 +36,7 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->id(PanelType::ADMIN->value)
-            ->domain(str_replace(['http://', 'https://'], '', config('app.admin_url')))
+            ->domain(str_replace(['http://', 'https://'], '', config('app.admin_domain')))
             ->path('')
             ->navigationGroups([
                 NavigationGroup::make()
