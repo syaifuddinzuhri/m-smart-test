@@ -128,7 +128,7 @@ class StartTest extends Page implements HasForms, HasActions
             'token' => null,
             'system_id' => null,
             'last_violation_at' => now(),
-            'violation_count' => ($this->exam->violation_count ?? 0) + 1,
+            'violation_count' => ($this->session->violation_count ?? 0) + 1,
             'violation_log' => $logs,
         ];
 
