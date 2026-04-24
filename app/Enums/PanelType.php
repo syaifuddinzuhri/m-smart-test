@@ -11,4 +11,5 @@ enum PanelType: string
 
     case ADMIN = 'admin';
     case STUDENT = 'student';
+    case SUPERVISOR = 'supervisor';
 }

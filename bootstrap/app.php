@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->statefulApi();
         $middleware->encryptCookies(except: [
+            'ms_supervisor_session',
             'ms_admin_session',
             'ms_student_session',
         ]);

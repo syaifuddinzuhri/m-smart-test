@@ -20,11 +20,14 @@ class DynamicSessionCookie
 
         $adminHost = str_replace(['http://', 'https://'], '', config('app.admin_domain'));
         $studentHost = str_replace(['http://', 'https://'], '', config('app.student_domain'));
+        $supervisorHost = str_replace(['http://', 'https://'], '', config('app.supervisor_domain'));
 
         if ($host === $adminHost) {
             Config::set('session.cookie', 'ms_admin_session');
         } elseif ($host === $studentHost) {
             Config::set('session.cookie', 'ms_student_session');
+        } elseif ($host === $supervisorHost) {
+            Config::set('session.cookie', 'ms_supervisor_session');
         }
 
         return $next($request);

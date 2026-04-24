@@ -56,6 +56,7 @@ return [
     'api_domain' => env('API_DOMAIN'),
     'admin_domain' => env('ADMIN_DOMAIN'),
     'student_domain' => env('STUDENT_DOMAIN'),
+    'supervisor_domain' => env('SUPERVISOR_DOMAIN'),
     'app_domain' => env('APP_DOMAIN'),
 
     /*

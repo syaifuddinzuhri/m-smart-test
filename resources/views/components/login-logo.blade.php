@@ -1,6 +1,8 @@
 @php
     $panelId = filament()->getId();
     $isAdmin = $panelId === 'admin';
+    $isSupervisor = $panelId === 'supervisor';
+    $isStudent = $panelId === 'student'; // atau sesuaikan dengan ID panel peserta Anda
 @endphp
 
 <style>
@@ -13,8 +15,10 @@
     body {
         @if ($isAdmin)
             background: radial-gradient(circle at top right, #ecfdf5 0%, #f8fafc 50%) !important;
+        @elseif ($isSupervisor)
+            background: radial-gradient(circle at top right, #eef2ff 0%, #f8fafc 50%) !important;
         @else
-            background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 50%) !important;
+            background: radial-gradient(circle at top right, #fff7ed 0%, #f8fafc 50%) !important;
         @endif
     }
 
@@ -36,7 +40,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: {{ $isAdmin ? '#3b82f6' : '#10b981' }};
+        background: {{ $isAdmin ? '#10b981' : ($isSupervisor ? '#6366f1' : '#f97316') }};
     }
 </style>
 
@@ -60,16 +64,31 @@
     <!-- Badge Penanda Panel -->
     <div
         class="my-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest
-        {{ $isAdmin
-            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-            : 'bg-orange-100 text-orange-700 border border-orange-200' }}">
+        @if($isAdmin)
+            bg-emerald-100 text-emerald-700 border border-emerald-200
+        @elseif($isSupervisor)
+            bg-indigo-100 text-indigo-700 border border-indigo-200
+        @else
+            bg-orange-100 text-orange-700 border border-orange-200
+        @endif">
+
         <span class="mr-1.5 flex h-2 w-2">
             <span
-                class="animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 {{ $isAdmin ? 'bg-emerald-400' : 'bg-orange-400' }}"></span>
+                class="animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75
+                {{ $isAdmin ? 'bg-emerald-400' : ($isSupervisor ? 'bg-indigo-400' : 'bg-orange-400') }}"></span>
             <span
-                class="relative inline-flex rounded-full h-2 w-2 {{ $isAdmin ? 'bg-emerald-500' : 'bg-orange-500' }}"></span>
+                class="relative inline-flex rounded-full h-2 w-2
+                {{ $isAdmin ? 'bg-emerald-500' : ($isSupervisor ? 'bg-indigo-500' : 'bg-orange-500') }}"></span>
         </span>
-        Portal {{ $isAdmin ? 'Administrator' : 'Peserta' }}
+
+        Portal
+        @if($isAdmin)
+            Administrator
+        @elseif($isSupervisor)
+            Pengawas
+        @else
+            Peserta
+        @endif
     </div>
 
     <div class="text-center px-4">
@@ -77,9 +96,13 @@
             <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
                 Kelola bank soal, sesi ujian, dan pantau aktivitas peserta secara real-time.
             </p>
+        @elseif ($isSupervisor)
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Pantau jalannya ujian, verifikasi kehadiran peserta, dan kendalikan sesi aktif.
+            </p>
         @else
             <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                Persiapkan diri Anda, kerjakan dengan jujur.
+                Persiapkan diri Anda, kerjakan dengan jujur dan teliti.
             </p>
         @endif
     </div>

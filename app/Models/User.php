@@ -36,6 +36,10 @@ class User extends Authenticatable implements FilamentUser
             return $role === UserRole::STUDENT->value;
         }
 
+        if ($panel->getId() === PanelType::SUPERVISOR->value) {
+            return $role === UserRole::SUPERVISOR->value;
+        }
+
         return false;
     }
 
