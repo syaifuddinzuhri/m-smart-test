@@ -115,15 +115,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     @foreach ($sessions as $session)
                         <div
-                            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm flex flex-col justify-between transition hover:border-orange-300">
+                            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm flex flex-col justify-between transition">
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <span @class([
                                         'px-2 py-0.5 text-[10px] font-bold uppercase rounded-full',
-                                        'bg-orange-100 text-orange-700' => $session->status->value === 'ongoing',
-                                        'bg-green-100 text-green-700' => $session->status->value === 'completed',
-                                        'bg-yellow-100 text-yellow-700' => $session->status->value === 'pause',
-                                        'bg-blue-100 text-blue-700' => $session->status->value === 'pending',
+                                        'bg-orange-100 text-orange-700 hover:border-orange-300' => $session->status->value === 'ongoing',
+                                        'bg-green-100 text-green-700 hover:border-green-300' => $session->status->value === 'completed',
+                                        'bg-blue-100 text-blue-700 hover:border-blue-300' => $session->status->value === 'pause',
+                                        'bg-yellow-100 text-yellow-700 hover:border-yellow-300' => $session->status->value === 'pending',
                                     ])>
                                         {{ $session->status->getLabel() }}
                                     </span>
