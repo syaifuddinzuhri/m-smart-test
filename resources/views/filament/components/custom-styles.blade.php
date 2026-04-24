@@ -57,6 +57,7 @@
         font-family: 'JetBrains Mono Local', monospace !important;
         letter-spacing: 0.1em;
         font-variant-ligatures: none;
+        font-feature-settings: "zero" 1;
     }
 </style>
 
