@@ -85,7 +85,7 @@ class DetailResultTest extends Page
             'pending_review' => $answers->whereNull('is_correct')->count(),
             'unanswered' => max(0, $totalQuestions - $submittedAnswersCount),
             'score' => number_format($this->session->total_score, 2),
-            'classroom' => $user->student?->classroom?->name . ' - ' . $user->student?->classroom?->major?->name,
+            'classroom' => $user->student?->classroom?->name,
             'passing_grade' => $passingGrade,
             'is_finalized' => is_null($this->session->finalized_at),
             'is_passed' => is_null($passingGrade) || ($this->session->total_score >= $passingGrade),

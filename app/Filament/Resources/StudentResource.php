@@ -79,13 +79,7 @@ class StudentResource extends Resource
                     ->schema([
                         Select::make('classroom_id')
                             ->label('Kelas')
-                            ->relationship(
-                                name: 'classroom',
-                                titleAttribute: 'name',
-                                // Eager load relasi major agar query efisien
-                                modifyQueryUsing: fn($query) => $query->with('major')
-                            )
-                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name} — " . ($record->major?->name ?? 'Umum'))
+                            ->relationship('classroom', 'name')
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -117,7 +111,7 @@ class StudentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['user', 'classroom.major']))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['user', 'classroom']))
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Nama Siswa')
@@ -130,16 +124,7 @@ class StudentResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('classroom.name')
-                    ->label('Kelas/Jurusan')
-                    ->formatStateUsing(function ($record) {
-                        $classroom = $record->classroom;
-                        $major = $classroom?->major?->name;
-                        $label = $classroom?->name;
-                        if ($major) {
-                            $label .= " - {$major}";
-                        }
-                        return $label;
-                    })
+                    ->label('Kelas')
                     ->sortable()
                     ->badge(),
 
@@ -153,12 +138,6 @@ class StudentResource extends Resource
                 Tables\Filters\SelectFilter::make('classroom_id')
                     ->label('Kelas')
                     ->relationship('classroom', 'name')
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\SelectFilter::make('major')
-                    ->label('Jurusan')
-                    ->relationship('classroom.major', 'name')
                     ->searchable()
                     ->preload(),
             ])

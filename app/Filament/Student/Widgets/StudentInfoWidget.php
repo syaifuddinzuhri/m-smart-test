@@ -3,6 +3,7 @@
 namespace App\Filament\Student\Widgets;
 
 use App\Enums\ExamSessionStatus;
+use App\Enums\ExamStatus;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use Filament\Widgets\Widget;
@@ -16,7 +17,7 @@ class StudentInfoWidget extends Widget
     protected function getViewData(): array
     {
         $user = auth()->user();
-        $user->load(['student.classroom.major']);
+        $user->load(['student.classroom']);
 
         // 1. Ujian Selesai
         $exams_done = ExamSession::where('user_id', $user->id)
@@ -28,6 +29,7 @@ class StudentInfoWidget extends Widget
         $exams_pending = Exam::whereHas('classrooms', function ($q) use ($user) {
             $q->where('classroom_id', $user->student?->classroom_id);
         })
+            ->where('status', ExamStatus::ACTIVE)
             ->whereNotIn('id', $startedExamIds)
             ->count();
 

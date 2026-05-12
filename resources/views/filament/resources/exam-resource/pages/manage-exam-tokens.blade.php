@@ -15,7 +15,7 @@
                     <x-heroicon-m-users class="w-3.5 h-3.5" />
                     <span>Target:</span>
                     <span class="text-gray-700 italic">
-                        {{ $record->classrooms->map(fn($c) => "{$c->name}-{$c->major?->code}")->implode(', ') ?: '-' }}
+                        {{ $record->classrooms->pluck('name')->implode(', ') ?: '-' }}
                     </span>
                 </div>
             </div>

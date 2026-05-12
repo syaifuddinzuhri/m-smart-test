@@ -71,9 +71,8 @@ class ExamRepository implements ExamRepositoryInterface
                 ->where('classroom_id', $classroomId)
                 ->take(1),
             'target_classroom' => Classroom::query()
-                ->join('majors', 'classrooms.major_id', '=', 'majors.id')
                 ->where('classrooms.id', $classroomId)
-                ->selectRaw("CONCAT(classrooms.name, ' - ', majors.name)")
+                ->select('name')
                 ->take(1),
         ]);
 

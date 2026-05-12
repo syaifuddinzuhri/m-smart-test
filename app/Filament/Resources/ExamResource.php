@@ -62,7 +62,7 @@ class ExamResource extends Resource
                                     ->live()
                                     ->searchable()
                                     ->preload()
-                                    ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name} - {$record->academicYear?->name}")
+                                    ->getOptionLabelFromRecordUsing(fn($record) => $record->name)
                                     ->afterStateUpdated(fn(Set $set, Get $get) => self::updateTitle($set, $get)),
                                 Select::make('subject_id')
                                     ->label('Mata Pelajaran')
@@ -127,12 +127,11 @@ class ExamResource extends Resource
                                                     ->whereNotIn('id', $selected)
                                                     ->get()
                                                     ->mapWithKeys(fn($item) => [
-                                                        $item->id => "{$item->name} - {$item->major?->name}"
+                                                        $item->id => $item->name
                                                     ]);
                                             })
                                             ->getOptionLabelUsing(function ($value) {
-                                                $classroom = \App\Models\Classroom::with('major')->find($value);
-                                                return $classroom ? "{$classroom->name} - {$classroom->major?->name}" : null;
+                                                return \App\Models\Classroom::find($value)?->name;
                                             }),
 
                                         TextInput::make('min_total_score')
@@ -320,11 +319,11 @@ class ExamResource extends Resource
         $subjectId = $get('subject_id');
 
         if ($categoryId && $subjectId) {
-            $category = ExamCategory::with(['academicYear'])->find($categoryId);
+            $category = ExamCategory::find($categoryId);
             $subjectName = Subject::find($subjectId)?->name;
 
             if ($category && $subjectName) {
-                $set('title', "{$category?->name} - {$subjectName} - {$category?->academicYear?->name}");
+                $set('title', "{$category?->name} - {$subjectName}");
             }
         } else {
             $set('title', "");
@@ -487,7 +486,7 @@ class ExamResource extends Resource
                 ->label('Judul Ujian')
                 ->searchable()
                 ->description(function (Exam $record): string {
-                    $classrooms = $record->classrooms->map(fn($c) => "{$c->name} {$c->major?->code}");
+                    $classrooms = $record->classrooms->map(fn($c) => $c->name);
 
                     if ($classrooms->count() <= 3) {
                         return $classrooms->implode(', ');
@@ -703,7 +702,7 @@ class ExamResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with([
-                'classrooms.major',
+                'classrooms',
                 'category',
                 'subject'
             ])

@@ -226,7 +226,7 @@ class ExamResultResource extends Resource
                                                 if (!$state || !$state->classroom)
                                                     return '-';
 
-                                                return $state->classroom->name . ' - ' . $state->classroom->major?->name;
+                                                return $state->classroom->name;
                                             })->weight(FontWeight::Bold),
                                         Infolists\Components\TextEntry::make('exam.title')->label('Nama Ujian')->weight(FontWeight::Bold),
                                         Infolists\Components\TextEntry::make('exam.subject.name')->label('Mata Pelajaran')->weight(FontWeight::Bold),

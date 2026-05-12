@@ -400,7 +400,7 @@
                     <td style="text-align: left; border: none; padding: 0; width: 50%;">
                         <strong>Mata Pelajaran:</strong> {{ $exam->subject?->name ?? '-' }} <br>
                         <strong>Kelas:</strong>
-                        {{ $exam->classrooms->map(fn($c) => "{$c->name}" . ($c->major ? "-{$c->major->code}" : ''))->implode(', ') ?: '-' }}
+                        {{ $exam->classrooms->pluck('name')->implode(', ') ?: '-' }}
                     </td>
                     <td style="text-align: right; border: none; padding: 0; width: 50%;">
                         <strong>Tanggal Mulai:</strong> {{ $record->started_at->format('d/m/Y') }} <br>

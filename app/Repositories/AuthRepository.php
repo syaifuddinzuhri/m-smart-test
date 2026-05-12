@@ -61,7 +61,7 @@ class AuthRepository implements AuthRepositoryInterface
         });
 
         return [
-            'user' => new UserResource($user->load(['student.classroom.major'])),
+            'user' => new UserResource($user->load(['student.classroom'])),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ];
@@ -116,7 +116,7 @@ class AuthRepository implements AuthRepositoryInterface
                 'highest_score' => $highest_score,
                 'average_score' => $average_score
             ],
-            'user' => new UserResource($user->load('student.classroom.major'))
+            'user' => new UserResource($user->load('student.classroom'))
         ];
     }
 

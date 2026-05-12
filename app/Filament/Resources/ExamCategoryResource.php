@@ -4,9 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExamCategoryResource\Pages;
 use App\Models\ExamCategory;
-use Filament\Forms;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -16,7 +14,6 @@ use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Validation\Rules\Unique;
 
 class ExamCategoryResource extends Resource
 {
@@ -39,30 +36,15 @@ class ExamCategoryResource extends Resource
             ->schema([
                 Section::make()
                     ->schema([
-                        Select::make('academic_year_id')
-                            ->relationship('academicYear', 'name')
-                            ->label('Tahun Ajaran')
-                            ->live(onBlur: true)
-                            ->reactive()
-                            ->searchable()
-                            ->preload()
-                            ->required(),
                         TextInput::make('name')
-                            ->live(onBlur: true)
-                            ->maxLength(255)
-                            ->unique(
-                                ignoreRecord: true,
-                                modifyRuleUsing: function (Unique $rule, $get) {
-                                    return $rule->where('academic_year_id', $get('academic_year_id'));
-                                }
-                            )
-                            ->validationMessages([
-                                'unique' => 'Kategori dengan nama ini sudah ada di tahun ajaran tersebut.',
-                            ])
                             ->label('Nama Kategori')
                             ->placeholder('Contoh: Ujian Tengah Semester')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Kategori dengan nama ini sudah ada.',
+                            ]),
                         Textarea::make('description')
                             ->label('Deskripsi')
                             ->columnSpanFull(),
@@ -79,10 +61,6 @@ class ExamCategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('academicYear.name')
-                    ->label('Tahun Ajaran')
                     ->searchable()
                     ->sortable(),
                 IconColumn::make('is_active')
@@ -106,9 +84,7 @@ class ExamCategoryResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

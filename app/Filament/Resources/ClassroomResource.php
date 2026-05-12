@@ -4,15 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClassroomResource\Pages;
 use App\Models\Classroom;
-use App\Models\Major;
-use Filament\Forms;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
@@ -32,37 +27,26 @@ class ClassroomResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Peserta';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Section::make()->schema([
-                        Select::make('major_id')
-                            ->label('Jurusan')
-                            ->relationship('major', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable()
-                            ->live()
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateCode($get, $set)),
-
                         TextInput::make('name')
                             ->label('Nama Kelas')
-                            ->placeholder('Contoh: XI')
+                            ->placeholder('Contoh: XI MIPA')
                             ->required()
                             ->live(debounce: 500)
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateCode($get, $set)),
+                            ->afterStateUpdated(fn($state, $set) => $set('code', strtoupper(str_replace(' ', '-', $state)))),
 
                         TextInput::make('code')
                             ->label('Kode Kelas')
-                            ->placeholder('Otomatis: {Nama}-{Kode Jurusan}')
                             ->required()
                             ->readOnly()
                             ->dehydrated()
-                            ->unique(ignoreRecord: true)
-                            ->helperText('Format otomatis: Nama Kelas - Kode Jurusan'),
+                            ->unique(ignoreRecord: true),
 
                         Toggle::make('is_active')
                             ->label('Status Aktif')
@@ -72,35 +56,12 @@ class ClassroomResource extends Resource
             ]);
     }
 
-    public static function updateCode(Get $get, Set $set): void
-    {
-        $name = $get('name');
-        $majorId = $get('major_id');
-
-        // Jika Nama ada, tapi Jurusan Kosong
-        if ($name && !$majorId) {
-            $set('code', strtoupper($name)); // Hanya Nama Kelas (misal: "XI")
-        }
-        // Jika Nama ada DAN Jurusan dipilih
-        elseif ($name && $majorId) {
-            $majorCode = Major::find($majorId)?->code;
-            if ($majorCode) {
-                $set('code', strtoupper("{$name}-{$majorCode}")); // Nama-Kode (misal: "XI-MIPA")
-            } else {
-                $set('code', strtoupper($name));
-            }
-        }
-    }
-
     public static function table(Table $table): Table
     {
         return $table->columns([
             TextColumn::make('name')
                 ->label('Nama Kelas')
                 ->searchable(),
-            TextColumn::make('major.name')
-                ->label('Jurusan')
-                ->sortable(),
             TextColumn::make('code')
                 ->label('Kode')
                 ->searchable(),
@@ -108,11 +69,6 @@ class ClassroomResource extends Resource
                 ->label('Aktif')
                 ->boolean(),
         ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('major_id')
-                    ->label('Filter Jurusan')
-                    ->relationship('major', 'name')
-            ])
             ->actions([
                 Tables\Actions\EditAction::make()->modalWidth('md'),
                 Tables\Actions\DeleteAction::make()
@@ -126,9 +82,7 @@ class ClassroomResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

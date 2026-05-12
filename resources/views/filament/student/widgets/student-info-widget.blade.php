@@ -23,9 +23,8 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="space-y-1">
-                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kelas & Jurusan</p>
-                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->classroom?->name }} -
-                    {{ $user->student?->classroom?->major?->name }}</p>
+                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kelas</p>
+                <p class="text-sm font-semibold text-gray-800">{{ $user->student?->classroom?->name ?? '-' }}</p>
             </div>
 
             <div class="space-y-1">

@@ -47,11 +47,7 @@ class ExamResultReport extends Page
 
                         Select::make('classroom_id')
                             ->label('Pilih Kelas')
-                            ->options(
-                                Classroom::with('major')->get()->mapWithKeys(fn($c) => [
-                                    $c->id => "{$c->name} - {$c->major->name}"
-                                ])
-                            )
+                            ->options(Classroom::pluck('name', 'id'))
                             ->searchable()
                             ->required(),
                     ])->columns(2),
@@ -82,7 +78,7 @@ class ExamResultReport extends Page
             return;
         }
 
-        $fileNameString = "rekap hasil {$exam->title} {$classroom->name} - {$classroom->major?->name}";
+        $fileNameString = "rekap hasil {$exam->title} {$classroom->name}";
         $fileName = Str::slug($fileNameString) . '.xlsx';
 
         DB::beginTransaction();

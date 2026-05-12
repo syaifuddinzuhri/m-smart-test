@@ -83,7 +83,7 @@ class ManageExamTokens extends Page
     public function exportPdf()
     {
         $tokens = $this->getTokensQuery()->get();
-        $exam = $this->record->load(['classrooms.major', 'subject']);
+        $exam = $this->record->load(['classrooms', 'subject']);
 
         $imagePath = public_path('images/logo.webp');
         $logoBase64 = '';

@@ -60,12 +60,7 @@ class ExamGradingResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('user.student.classroom.name')
-                    ->label('Kelas')
-                    ->formatStateUsing(
-                        fn($record) =>
-                        $record->user->student->classroom->name . ' - ' .
-                        $record->user->student->classroom->major->name
-                    ),
+                    ->label('Kelas'),
 
                 TextColumn::make('exam.title')
                     ->label('Ujian')
@@ -102,14 +97,9 @@ class ExamGradingResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                // Filter Berdasarkan Classroom (Name - Major)
                 SelectFilter::make('classroom_id')
                     ->label('Filter Kelas')
-                    ->options(
-                        Classroom::with('major')->get()->mapWithKeys(function ($classroom) {
-                            return [$classroom->id => "{$classroom->name} - {$classroom->major->name}"];
-                        })
-                    )
+                    ->options(Classroom::pluck('name', 'id'))
                     ->query(function (Builder $query, array $data) {
                         if (!empty($data['value'])) {
                             $query->whereHas('user.student', fn($q) => $q->where('classroom_id', $data['value']));

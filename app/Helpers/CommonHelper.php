@@ -203,7 +203,7 @@ if (!function_exists('auth_api')) {
     {
         $user = Auth::guard('api')->user();
         if ($user) {
-            $user->load(['student.classroom.major']);
+            $user->load(['student.classroom']);
         }
         return $user;
     }

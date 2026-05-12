@@ -29,7 +29,7 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
     public function __construct($examId, $classroomId)
     {
         $this->exam = Exam::with(['subject'])->findOrFail($examId);
-        $this->classroom = Classroom::with('major')->findOrFail($classroomId);
+        $this->classroom = Classroom::findOrFail($classroomId);
         $this->examClassroom = ExamClassroom::where('exam_id', $examId)
             ->where('classroom_id', $classroomId)
             ->first();
@@ -130,7 +130,7 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
                 $sheet->mergeCells("A2:{$lastColLetter}2");
                 $sheet->setCellValue('A2', strtoupper($this->exam->title));
                 $sheet->setCellValue('A3', 'Mata Pelajaran: ' . ($this->exam->subject->name ?? '-'));
-                $sheet->setCellValue('E3', 'Kelas: ' . $this->classroom->name . ' - ' . $this->classroom->major->name);
+                $sheet->setCellValue('E3', 'Kelas: ' . $this->classroom->name);
                 $sheet->setCellValue('A4', 'Skala Maksimal: ' . ($this->exam->target_max_score ?? 'Akumulasi'));
                 $sheet->setCellValue('E4', 'KKM: ' . $kkm);
 
