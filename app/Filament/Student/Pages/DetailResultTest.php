@@ -55,9 +55,9 @@ class DetailResultTest extends Page
         $countPG = $questions->whereIn('question_type', [
             QuestionType::SINGLE_CHOICE,
             QuestionType::MULTIPLE_CHOICE,
-            QuestionType::TRUE_FALSE
         ])->count();
 
+        $countTrueFalse = $questions->where('question_type', QuestionType::TRUE_FALSE)->count();
         $countShortAnswer = $questions->where('question_type', QuestionType::SHORT_ANSWER)->count();
         $countEssay = $questions->where('question_type', QuestionType::ESSAY)->count();
 
@@ -78,6 +78,7 @@ class DetailResultTest extends Page
             'actual_duration' => $actualDuration,
             'total_questions' => $totalQuestions,
             'count_pg' => $countPG,
+            'count_tf' => $countTrueFalse,
             'count_short' => $countShortAnswer,
             'count_essay' => $countEssay,
             'correct_answers' => $answers->where('is_correct', true)->count(),

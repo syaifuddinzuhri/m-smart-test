@@ -155,17 +155,18 @@ class ExamResource extends Resource
 
                         Tab::make('Sistem Poin')
                             ->schema([
-                                Grid::make(3)
+                                Grid::make(4)
                                     ->schema([
                                         // --- SEKSI PILIHAN GANDA ---
                                         Section::make('Pilihan Ganda')
+                                            ->description('Single & Multiple Choice')
                                             ->schema([
                                                 TextInput::make('point_pg')
                                                     ->label('Poin Benar')
                                                     ->numeric()
                                                     ->default(1)
                                                     ->minValue(0)
-                                                    ->lazy(), // Mengupdate state saat kursor pindah (lebih ringan dari reactive)
+                                                    ->lazy(),
 
                                                 TextInput::make('point_pg_wrong')
                                                     ->label('Poin Salah')
@@ -198,7 +199,50 @@ class ExamResource extends Resource
                                                     ]),
                                             ])->columnSpan(1),
 
+                                        // --- SEKSI PG TRUE/FALSE ---
+                                        Section::make('PG (Benar / Salah)')
+                                            ->description('Benar / Salah')
+                                            ->schema([
+                                                TextInput::make('point_true_false')
+                                                    ->label('Poin Benar')
+                                                    ->numeric()
+                                                    ->default(1)
+                                                    ->minValue(0)
+                                                    ->lazy(),
+
+                                                TextInput::make('point_true_false_wrong')
+                                                    ->label('Poin Salah')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->prefix('-')
+                                                    ->helperText('Pinalti jika jawaban salah.')
+                                                    ->rules([
+                                                        fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                            $poinBenar = (float) $get('point_true_false');
+                                                            if ((float) $value > $poinBenar) {
+                                                                $fail("Pinalti tidak boleh melebihi poin benar ({$poinBenar})");
+                                                            }
+                                                        },
+                                                    ]),
+
+                                                TextInput::make('point_true_false_null')
+                                                    ->label('Poin Kosong')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->prefix('-')
+                                                    ->helperText('Pinalti jika tidak dijawab.')
+                                                    ->rules([
+                                                        fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                            $poinBenar = (float) $get('point_true_false');
+                                                            if ((float) $value > $poinBenar) {
+                                                                $fail("Pinalti tidak boleh melebihi poin benar ({$poinBenar})");
+                                                            }
+                                                        },
+                                                    ]),
+                                            ])->columnSpan(1),
+
                                         Section::make('Isian Singkat')
+                                            ->description('Soal Isian Singkat')
                                             ->schema([
                                                 TextInput::make('point_short_answer')
                                                     ->label('Poin Benar')
@@ -240,6 +284,7 @@ class ExamResource extends Resource
 
                                         // --- SEKSI ESSAY ---
                                         Section::make('Essay')
+                                            ->description('Soal Essay')
                                             ->schema([
                                                 TextInput::make('point_essay_max')
                                                     ->label('Poin Maksimal')

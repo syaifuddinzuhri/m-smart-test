@@ -442,8 +442,7 @@
             </tr>
             <tr>
                 <td><strong>Total Soal</strong></td>
-                <td>: PG: {{ collect($results)->where('is_pg', true)->count() }} | Essay:
-                    {{ collect($results)->where('is_pg', false)->count() }}</td>
+                <td>: PG: {{ collect($results)->filter(fn($r) => $r['is_single'] || $r['is_multiple'])->count() }} | TF: {{ collect($results)->filter(fn($r) => $r['is_pg'] && !$r['is_single'] && !$r['is_multiple'])->count() }} | JS: {{ collect($results)->where('is_short', true)->count() }} | Essay: {{ collect($results)->where('is_essay', true)->count() }}</td>
                 <td><strong>Waktu Selesai</strong></td>
                 <td>: {{ $session->finished_at->format('d/m/Y H:i') }}</td>
             </tr>

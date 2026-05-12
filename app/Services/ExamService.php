@@ -64,11 +64,14 @@ class ExamService
              * Menghitung total pinalti awal berdasarkan jumlah soal
              */
             $initialPg = 0;
+            $initialTrueFalse = 0;
             $initialShort = 0;
             $initialEssay = 0;
 
             foreach ($exam->questions as $q) {
-                if ($q->isPg()) {
+                if ($q->isTrueFalse()) {
+                    $initialTrueFalse -= (float) $exam->point_true_false_null;
+                } elseif ($q->isPg()) {
                     $initialPg -= (float) $exam->point_pg_null;
                 } elseif ($q->isShortAnswer()) {
                     $initialShort -= (float) $exam->point_short_answer_null;
@@ -83,6 +86,7 @@ class ExamService
                 'question_seed' => $uniqueQuestionSeed,
                 'option_seed' => $uniqueOptionSeed,
                 'score_pg' => $initialPg,
+                'score_true_false' => $initialTrueFalse,
                 'score_short_answer' => $initialShort,
                 'score_essay' => $initialEssay,
                 'total_score' => 0,
@@ -110,6 +114,7 @@ class ExamService
         $total = 0;
         foreach ($questions as $q) {
             $total += match (true) {
+                $q->isTrueFalse() => (float) $exam->point_true_false,
                 $q->isPg() => (float) $exam->point_pg,
                 $q->isShortAnswer() => (float) $exam->point_short_answer,
                 $q->isEssay() => (float) $exam->point_essay_max,
@@ -141,7 +146,10 @@ class ExamService
         $penaltyScore = 0;
         $positiveScore = 0;
 
-        if ($question->isPg()) {
+        if ($question->isTrueFalse()) {
+            $positiveScore = $exam->point_true_false;
+            $penaltyScore = $exam->point_true_false_wrong;
+        } elseif ($question->isPg()) {
             $positiveScore = $exam->point_pg;
             $penaltyScore = $exam->point_pg_wrong;
         } elseif ($question->isShortAnswer()) {
@@ -185,7 +193,8 @@ class ExamService
 
         $exam = $session->exam;
         $column = match ($questionType) {
-            QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE, QuestionType::TRUE_FALSE => 'score_pg',
+            QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE => 'score_pg',
+            QuestionType::TRUE_FALSE => 'score_true_false',
             QuestionType::SHORT_ANSWER => 'score_short_answer',
             QuestionType::ESSAY => 'score_essay',
             default => null
@@ -199,7 +208,7 @@ class ExamService
             $session->refresh();
 
             // 2. Hitung Ulang Total Score secara Utuh (Agar sinkron dengan Sync)
-            $rawTotal = (float) $session->score_pg + (float) $session->score_short_answer + (float) $session->score_essay;
+            $rawTotal = (float) $session->score_pg + (float) $session->score_true_false + (float) $session->score_short_answer + (float) $session->score_essay;
 
             $finalTotal = $this->calculateFinalScore($exam, $rawTotal);
 
@@ -244,6 +253,7 @@ class ExamService
         else {
             if ($isCorrect) {
                 $newScore = match (true) {
+                    $question->isTrueFalse() => (float) $exam->point_true_false,
                     $question->isPg() => (float) $exam->point_pg,
                     $question->isShortAnswer() => (float) $exam->point_short_answer,
                     default => 0
@@ -251,6 +261,7 @@ class ExamService
             } else {
                 // PERBAIKAN: Gunakan NEGATIF jika salah (Sesuai sistem pinalti)
                 $newScore = match (true) {
+                    $question->isTrueFalse() => -(float) $exam->point_true_false_wrong,
                     $question->isPg() => -(float) $exam->point_pg_wrong,
                     $question->isShortAnswer() => -(float) $exam->point_short_answer_wrong,
                     default => 0
@@ -304,6 +315,7 @@ class ExamService
         $answers = ExamAnswer::with(['selectedOptions'])->where('exam_session_id', $session->id)->get()->keyBy('question_id');
 
         $totalPg = 0;
+        $totalTrueFalse = 0;
         $totalShort = 0;
         $totalEssay = 0;
 
@@ -315,7 +327,9 @@ class ExamService
 
             if (!$hasContent) {
                 // PINALTI KOSONG (NEGATIF)
-                if ($q->isPg())
+                if ($q->isTrueFalse())
+                    $totalTrueFalse -= (float) $exam->point_true_false_null;
+                elseif ($q->isPg())
                     $totalPg -= (float) $exam->point_pg_null;
                 elseif ($q->isShortAnswer())
                     $totalShort -= (float) $exam->point_short_answer_null;
@@ -325,10 +339,10 @@ class ExamService
                 // --- ADA JAWABAN ---
                 if ($q->isEssay()) {
                     $totalEssay += is_null($answer->is_correct) ? 0 : (float) $answer->score;
-                }
-                // PERBAIKAN DI SINI: Pisahkan PG dan Short Answer
-                elseif ($q->isShortAnswer()) {
+                } elseif ($q->isShortAnswer()) {
                     $totalShort += (float) ($answer->score);
+                } elseif ($q->isTrueFalse()) {
+                    $totalTrueFalse += (float) ($answer->score);
                 } elseif ($q->isPg()) {
                     $totalPg += (float) ($answer->score);
                 }
@@ -339,13 +353,14 @@ class ExamService
             }
         }
 
-        $rawTotal = $totalPg + $totalShort + $totalEssay;
+        $rawTotal = $totalPg + $totalTrueFalse + $totalShort + $totalEssay;
         $finalTotal = $this->calculateFinalScore($exam, $rawTotal);
 
         $hasManualType = $questions->contains(fn($q) => $q->isShortAnswer() || $q->isEssay());
 
         $updateData = [
             'score_pg' => $totalPg,
+            'score_true_false' => $totalTrueFalse,
             'score_short_answer' => $totalShort,
             'score_essay' => $totalEssay,
             'total_score' => max(0, $finalTotal),

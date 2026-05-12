@@ -73,6 +73,7 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
 
             // Kolom Tambahan Sub-Skor
             $data[] = (float) $session->score_pg;
+            $data[] = (float) $session->score_true_false;
             $data[] = (float) $session->score_short_answer;
             $data[] = (float) $session->score_essay;
             $data[] = (float) $session->total_score;
@@ -98,8 +99,9 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
             $widths[$col++] = 4;
         }
 
-        // Width 4 kolom skor (PG, JS, Essay, Total)
+        // Width 5 kolom skor (PG, TF, JS, Essay, Total)
         $widths[$col++] = 8; // PG
+        $widths[$col++] = 8; // TF
         $widths[$col++] = 8; // JS
         $widths[$col++] = 8; // Essay
         $widths[$col++] = 10; // Total
@@ -119,8 +121,8 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
 
-                // Total kolom: 4 (Base) + N (Soal) + 4 (Skor) + 1 (Ket)
-                $totalColsCount = 4 + $this->totalQuestions + 4 + 1;
+                // Total kolom: 4 (Base) + N (Soal) + 5 (Skor) + 1 (Ket)
+                $totalColsCount = 4 + $this->totalQuestions + 5 + 1;
                 $lastColLetter = $this->getColumnLetter($totalColsCount);
                 $kkm = $this->examClassroom?->min_total_score ?? 0;
 
@@ -154,17 +156,18 @@ class ExamResultExport implements FromCollection, WithHeadings, WithStyles, With
                     $col++;
                 }
 
-                // Header Grup: Total Poin (PG, JS, Essay, Total)
+                // Header Grup: Total Poin (PG, TF, JS, Essay, Total)
                 $scoreStartCol = $this->getColumnLetter(4 + $this->totalQuestions + 1);
-                $scoreEndCol = $this->getColumnLetter(4 + $this->totalQuestions + 4);
+                $scoreEndCol = $this->getColumnLetter(4 + $this->totalQuestions + 5);
                 $sheet->mergeCells("{$scoreStartCol}6:{$scoreEndCol}6");
                 $sheet->setCellValue("{$scoreStartCol}6", 'Total Poin');
 
                 // Sub-Header Poin (Row 7)
                 $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 1) . '7', 'PG');
-                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 2) . '7', 'JS');
-                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 3) . '7', 'ESSAY');
-                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 4) . '7', 'TOTAL');
+                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 2) . '7', 'TF');
+                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 3) . '7', 'JS');
+                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 4) . '7', 'ESSAY');
+                $sheet->setCellValue($this->getColumnLetter(4 + $this->totalQuestions + 5) . '7', 'TOTAL');
 
                 // Kolom Keterangan (Ket.)
                 $statusCol = $this->getColumnLetter($totalColsCount);

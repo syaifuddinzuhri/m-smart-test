@@ -238,6 +238,9 @@ class ExamResultResource extends Resource
                                         Infolists\Components\TextEntry::make('score_pg')
                                             ->label('Pilihan Ganda')
                                             ->weight(FontWeight::Bold),
+                                        Infolists\Components\TextEntry::make('score_true_false')
+                                            ->label('PG (Benar/Salah)')
+                                            ->weight(FontWeight::Bold),
                                         Infolists\Components\TextEntry::make('score_short_answer')
                                             ->label('Isian Singkat')
                                             ->weight(FontWeight::Bold),
@@ -303,6 +306,7 @@ class ExamResultResource extends Resource
 
                                         Infolists\Components\TextEntry::make('finalized_at')
                                             ->label('Status Finalisasi')
+                                            ->columnSpanFull()
                                             ->state(function ($record) {
                                                 if (is_null($record->finalized_at)) {
                                                     return new HtmlString('
