@@ -7,6 +7,7 @@ enum QuestionGroupType: string
     case PG = 'pg';
     case TF = 'tf';
     case SHORT = 'short';
+    case ESSAY = 'essay';
 
     // Mendapatkan Label Manusiawi
     public function getLabel(): string
@@ -15,6 +16,7 @@ enum QuestionGroupType: string
             self::PG => 'Pilihan Ganda',
             self::TF => 'Benar / Salah',
             self::SHORT => 'Isian Singkat',
+            self::ESSAY => 'Essay / Uraian',
         };
     }
 
@@ -25,6 +27,7 @@ enum QuestionGroupType: string
             self::PG => 'success',   // Hijau
             self::TF => 'info',      // Biru/Indigo
             self::SHORT => 'warning',// Kuning/Oranye
+            self::ESSAY => 'danger', // Merah/Ungu
         };
     }
 
@@ -42,6 +45,7 @@ enum QuestionGroupType: string
             self::PG => 'PETUNJUK PENGISIAN SOAL PILIHAN GANDA',
             self::TF => 'PETUNJUK PENGISIAN SOAL BENAR/SALAH',
             self::SHORT => 'PETUNJUK PENGISIAN SOAL ISIAN SINGKAT',
+            self::ESSAY => 'PETUNJUK PENGISIAN SOAL ESSAY / URAIAN',
         };
     }
 }

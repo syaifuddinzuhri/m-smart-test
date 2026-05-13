@@ -5,12 +5,16 @@ namespace App\Filament\Pages;
 use App\Enums\QuestionGroupType;
 use App\Exports\QuestionChoiceExcelTemplateExport;
 use App\Exports\QuestionChoiceWordTemplateExport;
+use App\Exports\QuestionEssayExcelTemplateExport;
+use App\Exports\QuestionEssayWordTemplateExport;
 use App\Exports\QuestionShortExcelTemplateExport;
 use App\Exports\QuestionShortWordTemplateExport;
 use App\Exports\QuestionTrueFalseExcelTemplateExport;
 use App\Exports\QuestionTrueFalseWordTemplateExport;
 use App\Imports\QuestionChoiceExcelImport;
 use App\Imports\QuestionChoiceWordImport;
+use App\Imports\QuestionEssayExcelImport;
+use App\Imports\QuestionEssayWordImport;
 use App\Imports\QuestionShortExcelImport;
 use App\Imports\QuestionShortWordImport;
 use App\Imports\QuestionTrueFalseExcelImport;
@@ -154,6 +158,7 @@ class ImportQuestion extends Page
                             'pg' => QuestionChoiceWordTemplateExport::export(),
                             'tf' => QuestionTrueFalseWordTemplateExport::export(),
                             'short' => QuestionShortWordTemplateExport::export(),
+                            'essay' => QuestionEssayWordTemplateExport::export(),
                             default => Notification::make()->title('Template belum tersedia')->danger()->send(),
                         };
                     }
@@ -162,6 +167,7 @@ class ImportQuestion extends Page
                         'pg' => Excel::download(new QuestionChoiceExcelTemplateExport, 'template_soal_pilihan_ganda_' . now()->format('Ymd_His') . '.xlsx'),
                         'tf' => Excel::download(new QuestionTrueFalseExcelTemplateExport, 'template_soal_benar_salah_' . now()->format('Ymd_His') . '.xlsx'),
                         'short' => Excel::download(new QuestionShortExcelTemplateExport, 'template_soal_jawaban_singkat_' . now()->format('Ymd_His') . '.xlsx'),
+                        'essay' => Excel::download(new QuestionEssayExcelTemplateExport, 'template_soal_essay_' . now()->format('Ymd_His') . '.xlsx'),
                         default => Notification::make()->title('Template belum tersedia')->danger()->send(),
                     };
                 }),
@@ -230,6 +236,10 @@ class ImportQuestion extends Page
                 'short' => [
                     'docx' => QuestionShortWordImport::class,
                     'excel' => QuestionShortExcelImport::class,
+                ],
+                'essay' => [
+                    'docx' => QuestionEssayWordImport::class,
+                    'excel' => QuestionEssayExcelImport::class,
                 ],
             ];
 
